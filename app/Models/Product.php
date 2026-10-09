@@ -11,8 +11,8 @@ class Product extends Model
 
     protected $fillable = [
         'name',
+        'cylinder_id',
         'gas_price',
-        'cylinder_fee',
         'current_stock',
         'max_capacity',
         'reorder_level',
@@ -23,7 +23,6 @@ class Product extends Model
     {
         return [
             'gas_price' => 'decimal:2',
-            'cylinder_fee' => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }
@@ -36,6 +35,11 @@ class Product extends Model
     public function inventoryLogs()
     {
         return $this->hasMany(InventoryLog::class);
+    }
+
+    public function cylinder()
+    {
+        return $this->belongsTo(Cylinder::class);
     }
 
     /**

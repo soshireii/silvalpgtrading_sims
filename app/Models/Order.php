@@ -11,13 +11,18 @@ class Order extends Model
 
     protected $fillable = [
         'order_code',
+        'invoice_number',
         'customer_id',
         'order_date',
+        'fulfillment_type',
+        'scheduled_delivery_date',
+        'ordered_at',
         'delivery_address',
         'subtotal',
         'cylinder_fee_total',
         'grand_total',
         'payment_method',
+        'payment_status',
         'is_paid',
         'paid_at',
         'status',
@@ -31,6 +36,8 @@ class Order extends Model
     {
         return [
             'order_date' => 'date',
+            'scheduled_delivery_date' => 'date',
+            'ordered_at' => 'datetime',
             'paid_at' => 'datetime',
             'delivered_at' => 'datetime',
             'is_paid' => 'boolean',
@@ -65,6 +72,11 @@ class Order extends Model
         return $this->hasOne(DeliveryProof::class);
     }
 
+    public function gcashPaymentProof()
+    {
+        return $this->hasOne(GcashPaymentProof::class);
+    }
+
     public function inventoryLogs()
     {
         return $this->hasMany(InventoryLog::class);
@@ -88,7 +100,7 @@ class Order extends Model
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status) {
-            'pending' => 'Pending',
+            'pending' => $this->fulfillment_type === 'pickup' ? 'Awaiting Pick-up' : 'Pending',
             'out_for_delivery' => 'Out for Delivery',
             'completed' => 'Completed',
             'cancelled' => 'Cancelled',
@@ -96,10 +108,27 @@ class Order extends Model
         };
     }
 
+    public function getPaymentStatusLabelAttribute(): string
+    {
+        return match ($this->payment_status) {
+            'not_paid' => 'Not Paid',
+            'waiting_for_payment' => 'Waiting for Payment',
+            'paid_in_full' => $this->payment_method === 'gcash' ? 'Paid' : 'Paid in Full',
+            default => 'Not Paid',
+        };
+    }
+
     /** Flag orders sitting too long without being delivered (late indicator = yellow) */
     public function getIsDelayedAttribute(): bool
     {
-        return in_array($this->status, ['pending', 'out_for_delivery'])
-            && $this->order_date->lt(now()->subDay());
+        if (! in_array($this->status, ['pending', 'out_for_delivery'])) {
+            return false;
+        }
+
+        $dueDate = $this->fulfillment_type === 'delivery'
+            ? $this->scheduled_delivery_date
+            : $this->order_date;
+
+        return $dueDate?->lt(today()) ?? false;
     }
 }

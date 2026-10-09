@@ -26,6 +26,7 @@ class DashboardController extends Controller
             ->sum('amount');
 
         $pendingOrders = Order::whereIn('status', ['pending', 'out_for_delivery'])->count();
+        $pendingDeliveryReviews = Order::whereHas('deliveryProof', fn ($query) => $query->where('status', 'pending'))->count();
 
         $products = Product::orderBy('current_stock')->get();
         $lowStockProducts = $products->filter(fn($p) => $p->stock_status !== 'green');
@@ -47,6 +48,7 @@ class DashboardController extends Controller
             'monthSales',
             'monthExpenses',
             'pendingOrders',
+            'pendingDeliveryReviews',
             'products',
             'lowStockProducts',
             'recentOrders',

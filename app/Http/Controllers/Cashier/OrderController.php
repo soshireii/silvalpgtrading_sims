@@ -33,7 +33,7 @@ class OrderController extends Controller
 
     public function create()
     {
-        $products = Product::where('is_active', true)->get();
+        $products = Product::with('cylinder')->where('is_active', true)->get();
         return view('cashier.orders.create', compact('products'));
     }
 
@@ -60,7 +60,9 @@ class OrderController extends Controller
         $validated = $request->validate([
             'customer_name' => 'required|string|max:255',
             'customer_phone' => 'required|string|max:30',
-            'delivery_address' => 'required|string|max:255',
+            'fulfillment_type' => 'required|in:delivery,pickup',
+            'delivery_address' => 'nullable|required_if:fulfillment_type,delivery|string|max:255',
+            'scheduled_delivery_date' => 'nullable|required_if:fulfillment_type,delivery|date|after_or_equal:today',
             'payment_method' => 'required|in:cash,gcash',
             'notes' => 'nullable|string',
             'items' => 'required|array|min:1',
@@ -73,13 +75,15 @@ class OrderController extends Controller
             customerData: [
                 'name' => $validated['customer_name'],
                 'phone' => $validated['customer_phone'],
-                'address' => $validated['delivery_address'],
+                'address' => $validated['delivery_address'] ?? 'Store pickup',
             ],
             items: $validated['items'],
-            deliveryAddress: $validated['delivery_address'],
+            deliveryAddress: $validated['delivery_address'] ?? 'Store pickup',
             paymentMethod: $validated['payment_method'],
             createdBy: $request->user()->id,
             notes: $validated['notes'] ?? null,
+            fulfillmentType: $validated['fulfillment_type'],
+            scheduledDeliveryDate: $validated['scheduled_delivery_date'] ?? null,
         );
 
         return redirect()->route('cashier.orders.show', $order)
@@ -88,9 +92,16 @@ class OrderController extends Controller
 
     public function show(Order $order)
     {
-        $order->load(['items.product', 'customer', 'deliveryStaff', 'deliveryProof', 'creator']);
+        $order->load(['items.product', 'items.cylinder', 'customer', 'deliveryStaff', 'deliveryProof', 'gcashPaymentProof', 'creator']);
         $deliveryStaff = User::where('role', 'delivery')->where('is_active', true)->get();
         return view('cashier.orders.show', compact('order', 'deliveryStaff'));
+    }
+
+    public function invoice(Order $order)
+    {
+        $order->load(['items.product', 'items.cylinder', 'customer']);
+
+        return view('orders.invoice', compact('order'));
     }
 
     public function assign(Request $request, Order $order)
@@ -105,5 +116,12 @@ class OrderController extends Controller
         $validated = $request->validate(['reason' => 'nullable|string|max:255']);
         $this->orderService->cancelOrder($order, $request->user()->id, $validated['reason'] ?? null);
         return back()->with('success', 'Order cancelled and stock restored.');
+    }
+
+    public function markPickupAsPaid(Order $order)
+    {
+        $this->orderService->markPickupAsPaid($order);
+
+        return back()->with('success', "Pick-up order {$order->order_code} marked paid and completed.");
     }
 }

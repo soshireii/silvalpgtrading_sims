@@ -8,7 +8,7 @@
                         <th class="py-3 px-4 font-medium">Order</th>
                         <th class="py-3 px-4 font-medium">Customer</th>
                         <th class="py-3 px-4 font-medium">Address</th>
-                        <th class="py-3 px-4 font-medium">Date</th>
+                        <th class="py-3 px-4 font-medium">Scheduled / Ordered</th>
                         <th class="py-3 px-4 font-medium">Status</th>
                     </tr>
                 </thead>
@@ -18,7 +18,10 @@
                         <td class="py-3 px-4"><a href="{{ route('delivery.orders.show', $order) }}" class="text-maroon-600 font-medium hover:underline">{{ $order->order_code }}</a></td>
                         <td class="py-3 px-4 text-gray-700">{{ $order->customer->name }}</td>
                         <td class="py-3 px-4 text-gray-500">{{ $order->delivery_address }}</td>
-                        <td class="py-3 px-4 text-gray-500">{{ $order->order_date->format('M j, Y') }}</td>
+                        <td class="py-3 px-4 text-gray-500">
+                            <div>{{ $order->scheduled_delivery_date?->format('M j, Y') ?? 'No date set' }}</div>
+                            <div class="text-xs text-gray-400">Ordered {{ $order->ordered_at?->format('M j, Y g:i A') }}</div>
+                        </td>
                         <td class="py-3 px-4">
                             <x-badge :color="$order->is_delayed ? 'yellow' : $order->status_color" :label="$order->is_delayed ? 'Delayed' : $order->status_label" />
                         </td>

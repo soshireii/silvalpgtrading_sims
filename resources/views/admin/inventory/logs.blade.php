@@ -1,7 +1,7 @@
-<x-app-layout title="{{ $product->name }} Logs" header="Inventory Logs — {{ $product->name }}">
+<x-app-layout title="{{ $inventoryItemName }} Audit" header="Inventory Audit — {{ $inventoryItemName }}">
 
     <div class="mb-4">
-        <a href="{{ route('admin.inventory.index') }}" class="text-sm text-maroon-600 hover:underline">← Back to Inventory</a>
+        <a href="{{ route($backRoute) }}" class="text-sm text-maroon-600 hover:underline">← Back to Inventory</a>
     </div>
 
     <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">

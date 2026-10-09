@@ -10,7 +10,7 @@ class OrderItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'order_id', 'product_id', 'quantity', 'has_own_cylinder',
+        'order_id', 'product_id', 'cylinder_id', 'quantity', 'has_own_cylinder',
         'unit_gas_price', 'unit_cylinder_fee', 'line_total',
     ];
 
@@ -32,5 +32,10 @@ class OrderItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function cylinder()
+    {
+        return $this->belongsTo(Cylinder::class);
     }
 }

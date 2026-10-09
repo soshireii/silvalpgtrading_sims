@@ -12,14 +12,21 @@ class DeliveryProof extends Model
     protected $fillable = [
         'order_id',
         'delivery_staff_id',
+        'reviewed_by',
         'proof_image_path',
+        'status',
         'remarks',
+        'review_note',
         'completed_at',
+        'reviewed_at',
     ];
 
     protected function casts(): array
     {
-        return ['completed_at' => 'datetime'];
+        return [
+            'completed_at' => 'datetime',
+            'reviewed_at' => 'datetime',
+        ];
     }
 
     public function order()
@@ -30,5 +37,10 @@ class DeliveryProof extends Model
     public function deliveryStaff()
     {
         return $this->belongsTo(User::class, 'delivery_staff_id');
+    }
+
+    public function reviewer()
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 }

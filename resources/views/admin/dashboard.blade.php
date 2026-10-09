@@ -23,6 +23,12 @@
         </x-stat-card>
     </div>
 
+    @if($pendingDeliveryReviews > 0)
+    <a href="{{ route('admin.orders.index', ['proof_status' => 'pending']) }}" class="mt-4 block rounded-xl border border-yellow-200 bg-status-warning-bg px-4 py-3 text-sm text-status-warning hover:bg-yellow-100">
+        <strong>{{ $pendingDeliveryReviews }} delivery photo(s)</strong> are waiting for your review. Review and confirm or deny them.
+    </a>
+    @endif
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
 
         <div class="lg:col-span-1 bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
@@ -76,7 +82,10 @@
                             <td class="py-2.5 pr-3"><a href="{{ route('admin.orders.show', $order) }}" class="text-maroon-600 font-medium hover:underline">{{ $order->order_code }}</a></td>
                             <td class="py-2.5 pr-3 text-gray-700">{{ $order->customer->name }}</td>
                             <td class="py-2.5 pr-3 text-gray-700">₱{{ number_format($order->grand_total, 2) }}</td>
-                            <td class="py-2.5 pr-3 text-gray-500 capitalize">{{ $order->payment_method }}</td>
+                            <td class="py-2.5 pr-3">
+                                <div class="text-gray-500 capitalize">{{ $order->payment_method }}</div>
+                                <x-badge :color="$order->payment_status === 'paid_in_full' ? 'green' : 'yellow'" :label="$order->payment_status_label" class="mt-1" />
+                            </td>
                             <td class="py-2.5"><x-badge :color="$order->status_color" :label="$order->status_label" /></td>
                         </tr>
                         @empty

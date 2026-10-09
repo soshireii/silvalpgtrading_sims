@@ -1,3 +1,13 @@
+# Silva LPG Trading — Uploaded Photos
+
+Delivery photos and GCash receipts are stored on Laravel's public disk. After installing or deploying the project, create the public storage link once:
+
+```bash
+php artisan storage:link
+```
+
+Without this link, uploaded photos exist in `storage/app/public` but their `/storage/...` image URLs return 404.
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
@@ -57,3 +67,4 @@ If you discover a security vulnerability within Laravel, please send an e-mail t
 ## License
 
 The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# silvalpgtrading_sims-main-backup-

@@ -11,6 +11,7 @@ class InventoryLog extends Model
 
     protected $fillable = [
         'product_id',
+        'cylinder_id',
         'type',
         'quantity_change',
         'stock_after',
@@ -27,6 +28,11 @@ class InventoryLog extends Model
     public function order()
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function cylinder()
+    {
+        return $this->belongsTo(Cylinder::class);
     }
 
     public function creator()

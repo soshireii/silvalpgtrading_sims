@@ -2,9 +2,10 @@
 $productsForJs = $products->map(fn ($p) => [
 'id' => $p->id,
 'name' => $p->name,
+'cylinder_name' => $p->cylinder?->name,
 'gas_price' => $p->gas_price,
-'cylinder_fee' => $p->cylinder_fee,
 'current_stock' => $p->current_stock,
+'cylinder_price' => $p->cylinder?->is_active ? $p->cylinder->price : null,
 ]);
 @endphp
 
@@ -17,7 +18,7 @@ $productsForJs = $products->map(fn ($p) => [
 
             {{-- Customer & delivery --}}
             <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm mb-5">
-                <h2 class="font-semibold text-gray-900 mb-4">Customer &amp; Delivery</h2>
+                <h2 class="font-semibold text-gray-900 mb-4">Customer &amp; Fulfillment</h2>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Customer name</label>
@@ -30,15 +31,31 @@ $productsForJs = $products->map(fn ($p) => [
                             class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
                     </div>
                     <div class="sm:col-span-2">
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Order type</label>
+                        <div class="flex gap-5 mt-2">
+                            <label class="flex items-center gap-2 text-sm">
+                                <input type="radio" name="fulfillment_type" value="delivery" x-model="fulfillmentType" @checked(old('fulfillment_type', 'delivery') === 'delivery') class="text-maroon-600 focus:ring-maroon-500"> Delivery
+                            </label>
+                            <label class="flex items-center gap-2 text-sm">
+                                <input type="radio" name="fulfillment_type" value="pickup" x-model="fulfillmentType" @checked(old('fulfillment_type') === 'pickup') class="text-maroon-600 focus:ring-maroon-500"> Pick-up
+                            </label>
+                        </div>
+                    </div>
+                    <div class="sm:col-span-2" x-show="fulfillmentType === 'delivery'" x-cloak>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Delivery address</label>
-                        <input type="text" name="delivery_address" value="{{ old('delivery_address') }}" required
+                        <input type="text" name="delivery_address" value="{{ old('delivery_address') }}" :required="fulfillmentType === 'delivery'"
+                            class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                    </div>
+                    <div x-show="fulfillmentType === 'delivery'" x-cloak>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Scheduled delivery date</label>
+                        <input type="date" name="scheduled_delivery_date" value="{{ old('scheduled_delivery_date') }}" min="{{ now()->toDateString() }}" :required="fulfillmentType === 'delivery'"
                             class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Order date</label>
-                        <input type="text" disabled value="{{ now()->format('F j, Y') }}"
+                        <input type="text" disabled value="{{ now()->format('F j, Y g:i A') }}"
                             class="w-full rounded-lg border-gray-200 bg-gray-50 text-sm text-gray-500">
-                        <p class="text-[11px] text-gray-400 mt-1">Recorded automatically as today.</p>
+                        <p class="text-[11px] text-gray-400 mt-1">Date and order time are recorded automatically.</p>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 mb-1">Payment method</label>
@@ -70,7 +87,7 @@ $productsForJs = $products->map(fn ($p) => [
                                 class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
                                 <option value="">Select product…</option>
                                 <template x-for="p in products" :key="p.id">
-                                    <option :value="p.id" x-text="`${p.name} — ₱${Number(p.gas_price).toLocaleString()} (stock: ${p.current_stock})`"></option>
+                                    <option :value="p.id" x-text="`${p.name} (${p.cylinder_name || 'size not set'}) — gas ₱${Number(p.gas_price).toLocaleString()}, cylinder ₱${Number(p.cylinder_price || 0).toLocaleString()} (stock: ${p.current_stock})`"></option>
                                 </template>
                             </select>
                         </div>
@@ -80,11 +97,12 @@ $productsForJs = $products->map(fn ($p) => [
                                 class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
                         </div>
                         <div class="col-span-8 sm:col-span-3">
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Cylinder</label>
+                            <label class="block text-xs font-medium text-gray-600 mb-1">Cylinder option</label>
                             <select :name="`items[${index}][has_own_cylinder]`" x-model="item.has_own_cylinder"
                                 class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
-                                <option :value="true">Has own (exchange) — gas only</option>
-                                <option :value="false">No cylinder — +₱1,500 fee</option>
+                                <option :value="true">Gas only (exchange)</option>
+                                <option :value="false"
+                                    x-text="!findProduct(item.product_id) ? 'Select gas first' : findProduct(item.product_id).cylinder_price == null ? 'Cylinder size not configured' : `Buy ${findProduct(item.product_id).cylinder_name} cylinder — ₱${Number(findProduct(item.product_id).cylinder_price).toLocaleString()}`"></option>
                             </select>
                         </div>
                         <div class="col-span-8 sm:col-span-1 text-sm text-gray-700 font-medium" x-text="'₱' + lineTotal(item).toLocaleString()"></div>
@@ -104,7 +122,7 @@ $productsForJs = $products->map(fn ($p) => [
                     <span x-text="'₱' + subtotal().toLocaleString()"></span>
                 </div>
                 <div class="flex justify-between text-sm text-gray-600 mb-2">
-                    <span>Cylinder fees</span>
+                    <span>Cylinder purchases</span>
                     <span x-text="'₱' + cylinderFeeTotal().toLocaleString()"></span>
                 </div>
                 <div class="flex justify-between text-base font-semibold text-gray-900 pt-2 border-t border-gray-100">
@@ -131,6 +149,7 @@ $productsForJs = $products->map(fn ($p) => [
         function orderForm(products) {
             return {
                 products,
+                fulfillmentType: @js(old('fulfillment_type', 'delivery')),
                 items: [{
                     product_id: '',
                     quantity: 1,
@@ -152,7 +171,7 @@ $productsForJs = $products->map(fn ($p) => [
                 lineTotal(item) {
                     const p = this.findProduct(item.product_id);
                     if (!p || !item.quantity) return 0;
-                    const fee = (item.has_own_cylinder === true || item.has_own_cylinder === 'true') ? 0 : parseFloat(p.cylinder_fee);
+                    const fee = (item.has_own_cylinder === true || item.has_own_cylinder === 'true') ? 0 : parseFloat(p.cylinder_price || 0);
                     return (parseFloat(p.gas_price) + fee) * item.quantity;
                 },
                 subtotal() {
@@ -166,7 +185,7 @@ $productsForJs = $products->map(fn ($p) => [
                         const p = this.findProduct(item.product_id);
                         if (!p) return sum;
                         const owns = (item.has_own_cylinder === true || item.has_own_cylinder === 'true');
-                        return sum + (owns ? 0 : parseFloat(p.cylinder_fee) * (item.quantity || 0));
+                        return sum + (owns ? 0 : parseFloat(p.cylinder_price || 0) * (item.quantity || 0));
                     }, 0);
                 },
                 grandTotal() {

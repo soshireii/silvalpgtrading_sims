@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Cashier;
 
 use App\Http\Controllers\Controller;
 use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class ExpenseController extends Controller
 {
@@ -22,13 +24,15 @@ class ExpenseController extends Controller
         $expenses = $query->latest('expense_date')->paginate(15)->withQueryString();
         $total = (clone $query)->sum('amount');
 
-        return view('cashier.expenses.index', compact('expenses', 'total'));
+        $categories = ExpenseCategory::orderBy('name')->get();
+
+        return view('cashier.expenses.index', compact('expenses', 'total', 'categories'));
     }
 
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'category' => 'required|string|max:100',
+            'category' => ['required', 'string', Rule::exists('expense_categories', 'name')],
             'amount' => 'required|numeric|min:0.01',
             'expense_date' => 'required|date',
             'note' => 'nullable|string|max:500',

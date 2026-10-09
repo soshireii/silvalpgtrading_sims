@@ -13,6 +13,7 @@ class DashboardController extends Controller
         $myOrders = Order::with('customer')
             ->where('assigned_delivery_id', $request->user()->id)
             ->where('status', 'out_for_delivery')
+            ->orderBy('scheduled_delivery_date')
             ->orderBy('order_date')
             ->get();
 

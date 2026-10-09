@@ -28,7 +28,8 @@
                     <x-badge :color="$order->is_delayed ? 'yellow' : $order->status_color" :label="$order->is_delayed ? 'Delayed' : $order->status_label" />
                 </div>
                 <p class="text-sm text-gray-600">{{ $order->customer->name }} — {{ $order->customer->phone }}</p>
-                <p class="text-sm text-gray-500">{{ $order->delivery_address }}</p>
+                <p class="text-sm text-gray-500">Scheduled: {{ $order->scheduled_delivery_date?->format('M j, Y') ?? 'Not set' }} — {{ $order->delivery_address }}</p>
+                <p class="text-xs text-gray-400 mt-1">Ordered {{ $order->ordered_at?->format('M j, Y g:i A') }}</p>
             </a>
             @endforeach
         </div>
