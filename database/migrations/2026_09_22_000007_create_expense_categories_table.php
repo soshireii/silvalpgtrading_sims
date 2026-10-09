@@ -15,21 +15,11 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        $names = ['Fuel', 'Supplier Restock', 'Salaries', 'Utilities'];
-        $names = array_merge($names, DB::table('expenses')->distinct()->pluck('category')->all());
-
-        $categories = [];
-        foreach ($names as $name) {
-            $name = trim((string) $name);
-            if ($name !== '') {
-                $categories[mb_strtolower($name)] = $name;
-            }
-        }
-
+        // Default categories so the expense form works right after migrating.
         $now = now();
-        DB::table('expense_categories')->insertOrIgnore(array_map(
+        DB::table('expense_categories')->insert(array_map(
             fn (string $name) => ['name' => $name, 'created_at' => $now, 'updated_at' => $now],
-            array_values($categories),
+            ['Fuel', 'Supplier Restock', 'Salaries', 'Utilities'],
         ));
     }
 

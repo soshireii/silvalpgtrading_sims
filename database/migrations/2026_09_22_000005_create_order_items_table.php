@@ -12,15 +12,17 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained();
+            $table->foreignId('cylinder_id')->nullable()->constrained()->nullOnDelete();
             $table->unsignedInteger('quantity');
 
-            // Per the business rule: if the customer has an empty cylinder to exchange,
-            // they only pay gas price. If they have none, they pay gas price + cylinder_fee (₱1,500 default).
+            // Customer with an empty cylinder to exchange pays gas price only;
+            // customer without one pays gas price + the cylinder fee.
             $table->boolean('has_own_cylinder')->default(true);
 
-            $table->decimal('unit_gas_price', 10, 2);   // snapshot of product gas_price at time of order
-            $table->decimal('unit_cylinder_fee', 10, 2)->default(0); // snapshot, 0 if has_own_cylinder
-            $table->decimal('line_total', 10, 2);        // (unit_gas_price + unit_cylinder_fee) * quantity
+            // Price snapshots at the time of the order
+            $table->decimal('unit_gas_price', 10, 2);
+            $table->decimal('unit_cylinder_fee', 10, 2)->default(0);
+            $table->decimal('line_total', 10, 2);   // (unit_gas_price + unit_cylinder_fee) * quantity
             $table->timestamps();
         });
     }

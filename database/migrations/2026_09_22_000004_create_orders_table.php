@@ -10,18 +10,26 @@ return new class extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->string('order_code')->unique(); // e.g. ORD-000123, shown to staff/customer
+            $table->string('order_code')->unique();
+            $table->string('invoice_number')->nullable()->unique();
             $table->foreignId('customer_id')->constrained()->cascadeOnDelete();
+
+            // When / how the order is fulfilled
             $table->date('order_date');
+            $table->string('fulfillment_type')->default('delivery');
+            $table->date('scheduled_delivery_date')->nullable();
+            $table->timestamp('ordered_at')->nullable();
             $table->string('delivery_address');
 
-            // Pricing snapshot (order_items holds line detail; these are the totals shown on the order)
+            // Pricing totals (order_items holds the per-line detail)
             $table->decimal('subtotal', 10, 2)->default(0);
             $table->decimal('cylinder_fee_total', 10, 2)->default(0);
             $table->decimal('grand_total', 10, 2)->default(0);
 
-            // Payment: business only accepts cash or GCash in full — no partial/down payment, per company policy
+            // Payment: cash or GCash only, paid in full — no partial/down payment (company policy).
+            // payment_status: not_paid | waiting_for_payment | paid_in_full
             $table->enum('payment_method', ['cash', 'gcash']);
+            $table->string('payment_status')->default('not_paid');
             $table->boolean('is_paid')->default(false);
             $table->timestamp('paid_at')->nullable();
 

@@ -12,9 +12,16 @@ return new class extends Migration
             $table->id();
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->foreignId('delivery_staff_id')->constrained('users');
+            $table->foreignId('reviewed_by')->nullable()->constrained('users')->nullOnDelete();
+
             $table->string('proof_image_path');
-            $table->text('remarks')->nullable();
-            $table->timestamp('completed_at');
+            $table->string('status')->default('pending');   // pending | approved | rejected
+            $table->text('remarks')->nullable();             // note from the delivery staff
+            $table->text('review_note')->nullable();         // note from the owner/cashier reviewing it
+
+            // Explicitly nullable: a proof isn't "completed" until it is approved.
+            $table->timestamp('completed_at')->nullable();
+            $table->timestamp('reviewed_at')->nullable();
             $table->timestamps();
         });
     }

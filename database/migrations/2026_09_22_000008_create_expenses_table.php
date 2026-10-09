@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('expenses', function (Blueprint $table) {
             $table->id();
-            $table->string('category'); // e.g. Restock, Fuel, Maintenance, Utilities
+            $table->string('category');                    // validated against expense_categories.name
             $table->decimal('amount', 10, 2);
             $table->date('expense_date');
             $table->text('note')->nullable();

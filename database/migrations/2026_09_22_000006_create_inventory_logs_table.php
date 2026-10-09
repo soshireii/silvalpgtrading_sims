@@ -10,9 +10,10 @@ return new class extends Migration
     {
         Schema::create('inventory_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('product_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('product_id')->nullable()->constrained()->cascadeOnDelete();
+            $table->foreignId('cylinder_id')->nullable()->constrained()->nullOnDelete();
             $table->enum('type', ['restock', 'sale', 'adjustment']);
-            $table->integer('quantity_change'); // positive for restock, negative for sale
+            $table->integer('quantity_change');            // positive for restock, negative for sale
             $table->unsignedInteger('stock_after');
             $table->foreignId('order_id')->nullable()->constrained()->nullOnDelete();
             $table->string('note')->nullable();
