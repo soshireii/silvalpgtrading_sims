@@ -32,7 +32,7 @@
             <div class="flex gap-3 mt-3 pt-3 border-t border-gray-100 text-xs">
                 <a href="{{ route('admin.cylinders.edit', $cylinder) }}" class="text-maroon-600 hover:underline">Edit size / price</a>
                 <a href="{{ route('admin.cylinders.logs', $cylinder) }}" class="text-maroon-600 hover:underline">Audit log →</a>
-                @if($cylinder->products->isEmpty() && $cylinder->order_items_count === 0 && $cylinder->inventory_logs_count === 0)
+                @if($cylinder->products->isEmpty() && $cylinder->order_items_count === 0 && $cylinder->stock_movements_count === 0)
                 <form method="POST" action="{{ route('admin.cylinders.destroy', $cylinder) }}" onsubmit="return confirm('Delete this cylinder size?');">
                     @csrf
                     @method('DELETE')

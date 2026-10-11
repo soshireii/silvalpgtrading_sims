@@ -2,45 +2,34 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-
-class DeliveryProof extends Model
+/** Delivery photo uploaded by delivery staff; the owner/cashier approves or rejects it. */
+class DeliveryProof extends OrderProof
 {
-    use HasFactory;
-
-    protected $fillable = [
-        'order_id',
-        'delivery_staff_id',
-        'reviewed_by',
-        'proof_image_path',
-        'status',
-        'remarks',
-        'review_note',
-        'completed_at',
-        'reviewed_at',
-    ];
-
-    protected function casts(): array
+    public static function kind(): string
     {
-        return [
-            'completed_at' => 'datetime',
-            'reviewed_at' => 'datetime',
-        ];
-    }
-
-    public function order()
-    {
-        return $this->belongsTo(Order::class);
+        return 'delivery';
     }
 
     public function deliveryStaff()
     {
-        return $this->belongsTo(User::class, 'delivery_staff_id');
+        return $this->uploader();
     }
 
-    public function reviewer()
+    // ---- names the views already use -------------------------------------------------
+
+    public function getProofImagePathAttribute(): ?string
     {
-        return $this->belongsTo(User::class, 'reviewed_by');
+        return $this->image_path;
+    }
+
+    public function getDeliveryStaffIdAttribute(): ?int
+    {
+        return $this->uploaded_by;
+    }
+
+    /** Completed = approved; the time is when it was approved. */
+    public function getCompletedAtAttribute()
+    {
+        return $this->status === 'approved' ? $this->reviewed_at : null;
     }
 }

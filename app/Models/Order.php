@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -9,21 +10,20 @@ class Order extends Model
 {
     use HasFactory;
 
+    /** SQL for an order's total, for reports (grand_total is not a column — see the orders migration). */
+    public const GRAND_TOTAL_SQL = 'subtotal + cylinder_fee_total';
+
     protected $fillable = [
         'order_code',
-        'invoice_number',
         'customer_id',
         'order_date',
         'fulfillment_type',
         'scheduled_delivery_date',
-        'ordered_at',
         'delivery_address',
         'subtotal',
         'cylinder_fee_total',
-        'grand_total',
         'payment_method',
         'payment_status',
-        'is_paid',
         'paid_at',
         'status',
         'assigned_delivery_id',
@@ -37,14 +37,26 @@ class Order extends Model
         return [
             'order_date' => 'date',
             'scheduled_delivery_date' => 'date',
-            'ordered_at' => 'datetime',
             'paid_at' => 'datetime',
             'delivered_at' => 'datetime',
-            'is_paid' => 'boolean',
             'subtotal' => 'decimal:2',
             'cylinder_fee_total' => 'decimal:2',
-            'grand_total' => 'decimal:2',
         ];
+    }
+
+    /** Orders that count as sales (everything except cancelled). */
+    public function scopeSales(Builder $query): Builder
+    {
+        return $query->where('status', '!=', 'cancelled');
+    }
+
+    /** Free-text search over order code, customer name and customer phone. */
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        return $query->where(function (Builder $q) use ($term) {
+            $q->where('order_code', 'like', "%{$term}%")
+                ->orWhereHas('customer', fn (Builder $c) => $c->search($term));
+        });
     }
 
     public function customer()
@@ -77,9 +89,37 @@ class Order extends Model
         return $this->hasOne(GcashPaymentProof::class);
     }
 
-    public function inventoryLogs()
+    public function stockMovements()
     {
-        return $this->hasMany(InventoryLog::class);
+        return $this->hasMany(StockMovement::class);
+    }
+
+    // ---- values that used to be columns, now worked out (3NF) -------------------------
+
+    public function getGrandTotalAttribute(): string
+    {
+        return number_format((float) $this->subtotal + (float) $this->cylinder_fee_total, 2, '.', '');
+    }
+
+    public function getIsPaidAttribute(): bool
+    {
+        return $this->payment_status === 'paid_in_full';
+    }
+
+    public function getInvoiceNumberAttribute(): ?string
+    {
+        return $this->order_code ? 'INV-' . substr($this->order_code, 4) : null;
+    }
+
+    /** Pick-up orders have no address in the database; show "Store pickup" like before. */
+    public function getDeliveryAddressAttribute(?string $value): ?string
+    {
+        return $value ?? ($this->fulfillment_type === 'pickup' ? 'Store pickup' : null);
+    }
+
+    public function getOrderedAtAttribute()
+    {
+        return $this->created_at;
     }
 
     /**

@@ -12,14 +12,14 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $todaySales = Order::whereDate('order_date', today())
-            ->where('status', '!=', 'cancelled')
-            ->sum('grand_total');
+        $total = DB::raw(Order::GRAND_TOTAL_SQL);
 
-        $monthSales = Order::whereMonth('order_date', now()->month)
+        $todaySales = Order::sales()->whereDate('order_date', today())->sum($total);
+
+        $monthSales = Order::sales()
+            ->whereMonth('order_date', now()->month)
             ->whereYear('order_date', now()->year)
-            ->where('status', '!=', 'cancelled')
-            ->sum('grand_total');
+            ->sum($total);
 
         $monthExpenses = Expense::whereMonth('expense_date', now()->month)
             ->whereYear('expense_date', now()->year)
@@ -29,14 +29,12 @@ class DashboardController extends Controller
         $pendingDeliveryReviews = Order::whereHas('deliveryProof', fn ($query) => $query->where('status', 'pending'))->count();
 
         $products = Product::orderBy('current_stock')->get();
-        $lowStockProducts = $products->filter(fn($p) => $p->stock_status !== 'green');
+        $lowStockProducts = $products->filter(fn ($p) => $p->stock_status !== 'green');
 
         $recentOrders = Order::with('customer')->latest()->take(8)->get();
 
-        $salesTrend = Order::select(
-            DB::raw('DATE(order_date) as date'),
-            DB::raw('SUM(grand_total) as total')
-        )
+        $salesTrend = DB::table('orders')
+            ->selectRaw('DATE(order_date) as date, SUM(' . Order::GRAND_TOTAL_SQL . ') as total')
             ->where('status', '!=', 'cancelled')
             ->where('order_date', '>=', now()->subDays(6)->toDateString())
             ->groupBy('date')

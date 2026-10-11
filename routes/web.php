@@ -8,6 +8,9 @@ use App\Http\Controllers\Admin\CylinderController as AdminCylinder;
 use App\Http\Controllers\Admin\ExpenseController as AdminExpense;
 use App\Http\Controllers\Admin\ReportController as AdminReport;
 use App\Http\Controllers\Admin\DeliveryStaffController as AdminDeliveryStaff;
+use App\Http\Controllers\Admin\SupplierController as AdminSupplier;
+use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\StockController;
 use App\Http\Controllers\Cashier\DashboardController as CashierDashboard;
 use App\Http\Controllers\Cashier\OrderController as CashierOrder;
 use App\Http\Controllers\Cashier\InventoryController as CashierInventory;
@@ -59,7 +62,6 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::get('/inventory/{product}/edit', [AdminInventory::class, 'edit'])->name('inventory.edit');
     Route::put('/inventory/{product}', [AdminInventory::class, 'update'])->name('inventory.update');
     Route::delete('/inventory/{product}', [AdminInventory::class, 'destroy'])->name('inventory.destroy');
-    Route::post('/inventory/{product}/restock', [AdminInventory::class, 'restock'])->name('inventory.restock');
     Route::get('/inventory/{product}/logs', [AdminInventory::class, 'logs'])->name('inventory.logs');
 
     Route::get('/cylinders', [AdminCylinder::class, 'index'])->name('cylinders.index');
@@ -77,6 +79,12 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
 
     Route::get('/reports', [AdminReport::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [AdminReport::class, 'export'])->name('reports.export');
+
+    // Suppliers the shop buys LPG stock from (owner only)
+    Route::get('/suppliers', [AdminSupplier::class, 'index'])->name('suppliers.index');
+    Route::post('/suppliers', [AdminSupplier::class, 'store'])->name('suppliers.store');
+    Route::put('/suppliers/{supplier}', [AdminSupplier::class, 'update'])->name('suppliers.update');
+    Route::delete('/suppliers/{supplier}', [AdminSupplier::class, 'destroy'])->name('suppliers.destroy');
 
     // Delivery staff are non-permanent and not created via public registration —
     // the Owner is the only one who can create, edit, or remove their accounts.
@@ -101,9 +109,21 @@ Route::middleware(['auth', 'verified', 'role:cashier'])->prefix('cashier')->name
     Route::post('/orders/{order}/pickup-paid', [CashierOrder::class, 'markPickupAsPaid'])->name('orders.pickup-paid');
 
     Route::get('/inventory', [CashierInventory::class, 'index'])->name('inventory.index');
-    Route::post('/inventory/{product}/restock', [CashierInventory::class, 'restock'])->name('inventory.restock');
+    Route::get('/inventory/{product}/logs', [CashierInventory::class, 'logs'])->name('inventory.logs');
     Route::get('/expenses', [CashierExpense::class, 'index'])->name('expenses.index');
     Route::post('/expenses', [CashierExpense::class, 'store'])->name('expenses.store');
+});
+
+// Stock in / stock out and supplier orders — both owner and cashier handle stock
+Route::middleware(['auth', 'verified', 'role:admin,cashier'])->group(function () {
+    Route::post('/stock/{product}/in', [StockController::class, 'in'])->name('stock.in');
+    Route::post('/stock/{product}/out', [StockController::class, 'out'])->name('stock.out');
+
+    Route::get('/purchase-orders', [PurchaseOrderController::class, 'index'])->name('purchase-orders.index');
+    Route::post('/purchase-orders', [PurchaseOrderController::class, 'store'])->name('purchase-orders.store');
+    Route::get('/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
+    Route::post('/purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive'])->name('purchase-orders.receive');
+    Route::post('/purchase-orders/{purchaseOrder}/cancel', [PurchaseOrderController::class, 'cancel'])->name('purchase-orders.cancel');
 });
 
 Route::middleware(['auth', 'verified', 'role:delivery'])->prefix('delivery')->name('delivery.')->group(function () {

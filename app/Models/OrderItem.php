@@ -10,8 +10,8 @@ class OrderItem extends Model
     use HasFactory;
 
     protected $fillable = [
-        'order_id', 'product_id', 'cylinder_id', 'quantity', 'has_own_cylinder',
-        'unit_gas_price', 'unit_cylinder_fee', 'line_total',
+        'order_id', 'product_id', 'quantity', 'has_own_cylinder',
+        'unit_gas_price', 'unit_cylinder_fee',
     ];
 
     protected function casts(): array
@@ -20,8 +20,15 @@ class OrderItem extends Model
             'has_own_cylinder' => 'boolean',
             'unit_gas_price' => 'decimal:2',
             'unit_cylinder_fee' => 'decimal:2',
-            'line_total' => 'decimal:2',
         ];
+    }
+
+    /** (gas price + cylinder fee) x quantity — worked out, not stored. */
+    public function getLineTotalAttribute(): string
+    {
+        $unit = (float) $this->unit_gas_price + (float) $this->unit_cylinder_fee;
+
+        return number_format($unit * (int) $this->quantity, 2, '.', '');
     }
 
     public function order()
@@ -34,8 +41,9 @@ class OrderItem extends Model
         return $this->belongsTo(Product::class);
     }
 
+    /** The cylinder size of this line, taken from its product. */
     public function cylinder()
     {
-        return $this->belongsTo(Cylinder::class);
+        return $this->hasOneThrough(Cylinder::class, Product::class, 'id', 'id', 'product_id', 'cylinder_id');
     }
 }

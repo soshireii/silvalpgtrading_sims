@@ -32,9 +32,14 @@ class Product extends Model
         return $this->hasMany(OrderItem::class);
     }
 
-    public function inventoryLogs()
+    public function stockMovements()
     {
-        return $this->hasMany(InventoryLog::class);
+        return $this->hasMany(StockMovement::class);
+    }
+
+    public function purchaseOrderItems()
+    {
+        return $this->hasMany(PurchaseOrderItem::class);
     }
 
     public function cylinder()
@@ -45,7 +50,7 @@ class Product extends Model
     /**
      * Stock indicator used across dashboards:
      * red    = out of stock (0)
-     * yellow = at/below reorder level (<= 20 by default) -> needs restock
+     * yellow = at/below reorder level -> needs restock
      * green  = healthy stock
      */
     public function getStockStatusAttribute(): string

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Delivery;
 
 use App\Http\Controllers\Controller;
-use App\Models\DeliveryProof;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -29,7 +28,7 @@ class OrderController extends Controller
         return view('delivery.orders.show', compact('order'));
     }
 
-    /** Submit a delivery photo for admin review. Only approval completes the order. */
+    /** Submit a delivery photo for review. Only approval completes the order. */
     public function complete(Request $request, Order $order)
     {
         abort_unless($order->assigned_delivery_id === $request->user()->id, 403);
@@ -59,18 +58,17 @@ class OrderController extends Controller
         $path = $request->file('proof_image')->store('delivery-proofs', 'public');
 
         $proofData = [
-            'delivery_staff_id' => $request->user()->id,
-            'proof_image_path' => $path,
+            'uploaded_by' => $request->user()->id,
+            'image_path' => $path,
             'status' => 'pending',
             'remarks' => $validated['remarks'] ?? null,
             'review_note' => null,
             'reviewed_by' => null,
             'reviewed_at' => null,
-            'completed_at' => null,
         ];
 
         if ($existingProof) {
-            $oldPath = $existingProof->proof_image_path;
+            $oldPath = $existingProof->image_path;
             $existingProof->update($proofData);
             Storage::disk('public')->delete($oldPath);
         } else {

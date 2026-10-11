@@ -1,4 +1,4 @@
-<x-app-layout title="{{ $inventoryItemName }} Audit" header="Inventory Audit — {{ $inventoryItemName }}">
+<x-app-layout title="{{ $inventoryItemName }} History" header="Stock In &amp; Out — {{ $inventoryItemName }}">
 
     <div class="mb-4">
         <a href="{{ route($backRoute) }}" class="text-sm text-maroon-600 hover:underline">← Back to Inventory</a>
@@ -10,8 +10,9 @@
                 <thead class="bg-gray-50">
                     <tr class="text-left text-gray-500 border-b border-gray-100">
                         <th class="py-3 px-4 font-medium">Date</th>
-                        <th class="py-3 px-4 font-medium">Type</th>
+                        <th class="py-3 px-4 font-medium">Movement</th>
                         <th class="py-3 px-4 font-medium">Change</th>
+                        <th class="py-3 px-4 font-medium">Reason</th>
                         <th class="py-3 px-4 font-medium">Stock after</th>
                         <th class="py-3 px-4 font-medium">Order</th>
                         <th class="py-3 px-4 font-medium">By</th>
@@ -23,19 +24,28 @@
                     <tr class="border-b border-gray-50 hover:bg-gray-50">
                         <td class="py-2.5 px-4 text-gray-500">{{ $log->created_at->format('M j, Y g:i A') }}</td>
                         <td class="py-2.5 px-4">
-                            <x-badge :color="$log->type === 'sale' ? 'red' : ($log->type === 'restock' ? 'green' : 'yellow')" :label="ucfirst($log->type)" />
+                            <x-badge :color="$log->type === 'in' ? 'green' : 'red'" :label="$log->type_label" />
                         </td>
                         <td class="py-2.5 px-4 {{ $log->quantity_change < 0 ? 'text-status-danger' : 'text-status-success' }} font-medium">
                             {{ $log->quantity_change > 0 ? '+' : '' }}{{ $log->quantity_change }}
                         </td>
+                        <td class="py-2.5 px-4 text-gray-600">{{ $log->reason_label }}</td>
                         <td class="py-2.5 px-4 text-gray-700">{{ $log->stock_after }}</td>
-                        <td class="py-2.5 px-4 text-gray-500">{{ $log->order->order_code ?? '—' }}</td>
+                        <td class="py-2.5 px-4 text-gray-500">
+                            @if($log->order)
+                                {{ $log->order->order_code }}
+                            @elseif($log->purchaseOrder)
+                                <a href="{{ route('purchase-orders.show', $log->purchaseOrder) }}" class="text-maroon-600 hover:underline">{{ $log->purchaseOrder->po_number }}</a>
+                            @else
+                                —
+                            @endif
+                        </td>
                         <td class="py-2.5 px-4 text-gray-500">{{ $log->creator->name ?? '—' }}</td>
                         <td class="py-2.5 px-4 text-gray-500">{{ $log->note }}</td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="py-8 text-center text-gray-400">No inventory movement yet.</td>
+                        <td colspan="8" class="py-8 text-center text-gray-400">No stock movement yet.</td>
                     </tr>
                     @endforelse
                 </tbody>

@@ -28,14 +28,15 @@ class Cylinder extends Model
         return $this->hasMany(Product::class);
     }
 
-    public function inventoryLogs()
-    {
-        return $this->hasMany(InventoryLog::class);
-    }
-
+    /** Order lines of every gas product that uses this cylinder size. */
     public function orderItems()
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->hasManyThrough(OrderItem::class, Product::class);
     }
 
+    /** Stock movements of every gas product that uses this cylinder size. */
+    public function stockMovements()
+    {
+        return $this->hasManyThrough(StockMovement::class, Product::class);
+    }
 }

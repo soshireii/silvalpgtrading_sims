@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schema;
 it('stores expense ids and displays them in the expense list', function () {
     $admin = User::factory()->create(['role' => 'admin', 'is_active' => true]);
     $expense = Expense::create([
-        'category' => 'Fuel',
+        'expense_category_id' => ExpenseCategory::where('name', 'Fuel')->value('id'),
         'amount' => 125.50,
         'expense_date' => now()->toDateString(),
         'created_by' => $admin->id,
@@ -63,7 +63,7 @@ it('accepts only saved categories when recording an expense', function () {
         ->assertRedirect();
 
     $this->assertDatabaseHas('expenses', [
-        'category' => 'Fuel',
+        'expense_category_id' => ExpenseCategory::where('name', 'Fuel')->value('id'),
         'created_by' => $admin->id,
     ]);
 

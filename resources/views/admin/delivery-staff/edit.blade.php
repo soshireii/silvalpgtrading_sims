@@ -3,10 +3,17 @@
     <div class="max-w-lg bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
         <form method="POST" action="{{ route('admin.delivery-staff.update', $staff) }}" class="space-y-4">
             @csrf @method('PUT')
-            <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Full name</label>
-                <input type="text" name="name" value="{{ old('name', $staff->name) }}" required
-                    class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">First name</label>
+                    <input type="text" name="first_name" value="{{ old('first_name', $staff->first_name) }}" required maxlength="100"
+                        class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Last name</label>
+                    <input type="text" name="last_name" value="{{ old('last_name', $staff->last_name) }}" required maxlength="100"
+                        class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                </div>
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Email (used to log in)</label>

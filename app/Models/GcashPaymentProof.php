@@ -2,32 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
-
-class GcashPaymentProof extends Model
+/** GCash receipt recorded by the owner/cashier. */
+class GcashPaymentProof extends OrderProof
 {
-    use HasFactory;
-
-    protected $fillable = [
-        'order_id',
-        'uploaded_by',
-        'image_path',
-        'uploaded_at',
-    ];
-
-    protected function casts(): array
+    public static function kind(): string
     {
-        return ['uploaded_at' => 'datetime'];
+        return 'payment';
     }
 
-    public function order()
+    /** When the receipt was (last) uploaded. */
+    public function getUploadedAtAttribute()
     {
-        return $this->belongsTo(Order::class);
-    }
-
-    public function uploader()
-    {
-        return $this->belongsTo(User::class, 'uploaded_by');
+        return $this->updated_at;
     }
 }

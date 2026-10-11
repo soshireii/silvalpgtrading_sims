@@ -10,11 +10,13 @@ return new class extends Migration
     {
         Schema::create('expenses', function (Blueprint $table) {
             $table->id();
-            $table->string('category');                    // validated against expense_categories.name
+            $table->foreignId('expense_category_id')->constrained();     // category name lives only in expense_categories
             $table->decimal('amount', 10, 2);
-            $table->date('expense_date');
+            $table->date('expense_date')->index();
             $table->text('note')->nullable();
-            $table->foreignId('created_by')->constrained('users');
+            // Set when the expense was created automatically by receiving a supplier delivery
+            $table->foreignId('purchase_order_id')->nullable()->unique()->constrained()->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
         });
     }

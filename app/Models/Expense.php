@@ -9,7 +9,7 @@ class Expense extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['category', 'amount', 'expense_date', 'note', 'created_by'];
+    protected $fillable = ['expense_category_id', 'amount', 'expense_date', 'note', 'purchase_order_id', 'created_by'];
 
     protected function casts(): array
     {
@@ -17,6 +17,22 @@ class Expense extends Model
             'amount' => 'decimal:2',
             'expense_date' => 'date',
         ];
+    }
+
+    /** Category name, so views can keep using $expense->category. */
+    public function getCategoryAttribute(): ?string
+    {
+        return $this->expenseCategory?->name;
+    }
+
+    public function expenseCategory()
+    {
+        return $this->belongsTo(ExpenseCategory::class);
+    }
+
+    public function purchaseOrder()
+    {
+        return $this->belongsTo(PurchaseOrder::class);
     }
 
     public function creator()

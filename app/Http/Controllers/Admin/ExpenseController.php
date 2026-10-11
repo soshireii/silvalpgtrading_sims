@@ -12,7 +12,7 @@ class ExpenseController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Expense::with('creator');
+        $query = Expense::with('expenseCategory', 'creator');
 
         if ($from = $request->get('from')) {
             $query->whereDate('expense_date', '>=', $from);
@@ -38,7 +38,13 @@ class ExpenseController extends Controller
             'note' => 'nullable|string|max:500',
         ]);
 
-        Expense::create([...$validated, 'created_by' => $request->user()->id]);
+        Expense::create([
+            'expense_category_id' => ExpenseCategory::where('name', $validated['category'])->value('id'),
+            'amount' => $validated['amount'],
+            'expense_date' => $validated['expense_date'],
+            'note' => $validated['note'] ?? null,
+            'created_by' => $request->user()->id,
+        ]);
 
         return back()->with('success', 'Expense recorded.');
     }

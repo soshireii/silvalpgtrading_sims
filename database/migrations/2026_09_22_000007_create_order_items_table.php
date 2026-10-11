@@ -6,23 +6,24 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * line_total is not stored: it is (unit_gas_price + unit_cylinder_fee) * quantity.
+     * The cylinder size is not stored either: it is product -> cylinder (OrderItem::cylinder()).
+     */
     public function up(): void
     {
         Schema::create('order_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->foreignId('product_id')->constrained();
-            $table->foreignId('cylinder_id')->nullable()->constrained()->nullOnDelete();
             $table->unsignedInteger('quantity');
 
-            // Customer with an empty cylinder to exchange pays gas price only;
-            // customer without one pays gas price + the cylinder fee.
+            // Customer with an empty cylinder to exchange pays gas only; otherwise gas + cylinder fee.
             $table->boolean('has_own_cylinder')->default(true);
 
-            // Price snapshots at the time of the order
+            // Price snapshots (prices change over time, so history keeps what was charged)
             $table->decimal('unit_gas_price', 10, 2);
             $table->decimal('unit_cylinder_fee', 10, 2)->default(0);
-            $table->decimal('line_total', 10, 2);   // (unit_gas_price + unit_cylinder_fee) * quantity
             $table->timestamps();
         });
     }

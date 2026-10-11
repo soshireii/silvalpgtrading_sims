@@ -13,7 +13,8 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'name',
+        'first_name',
+        'last_name',
         'email',
         'password',
         'role',
@@ -35,6 +36,12 @@ class User extends Authenticatable
         ];
     }
 
+    /** Full name, so views can keep using $user->name. */
+    public function getNameAttribute(): string
+    {
+        return trim($this->first_name . ' ' . $this->last_name);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
@@ -52,9 +59,7 @@ class User extends Authenticatable
 
     /**
      * Delivery staff are the only role the owner manages (create/edit/delete)
-     * from the app, since — unlike the owner and cashier — they aren't
-     * permanent employees. Scope kept here so it's reusable outside the
-     * controller (e.g. dashboard widgets, assign-delivery dropdowns).
+     * from the app, since — unlike the owner and cashier — they aren't permanent.
      */
     public function scopeDeliveryStaff(Builder $query): Builder
     {
@@ -64,6 +69,11 @@ class User extends Authenticatable
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
+    }
+
+    public function scopeOrderByName(Builder $query): Builder
+    {
+        return $query->orderBy('first_name')->orderBy('last_name');
     }
 
     /** Where should this user land after login? */

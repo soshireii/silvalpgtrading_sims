@@ -9,7 +9,8 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
-            UserSeeder::class,
+            UserSeeder::class,      // owner + cashier first: the ledger needs a user for opening stock
+            SupplierSeeder::class,
             ProductSeeder::class,
         ]);
     }

@@ -21,7 +21,8 @@ class UserSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'owner@silvalpg.com'],
             [
-                'name' => 'Jeric Silva',
+                'first_name' => 'Jeric',
+                'last_name' => 'Silva',
                 'password' => Hash::make('password'),
                 'role' => 'admin',
                 'phone' => '09170000001',
@@ -33,7 +34,8 @@ class UserSeeder extends Seeder
         User::updateOrCreate(
             ['email' => 'cashier@silvalpg.com'],
             [
-                'name' => 'Silva LPG Cashier',
+                'first_name' => 'Silva',
+                'last_name' => 'Cashier',
                 'password' => Hash::make('password'),
                 'role' => 'cashier',
                 'phone' => '09170000002',

@@ -10,6 +10,7 @@
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <link rel="icon" type="image/png" href="{{ Vite::asset('resources/images/logo.png') }}">
     <style>
         [x-cloak] {
             display: none !important;

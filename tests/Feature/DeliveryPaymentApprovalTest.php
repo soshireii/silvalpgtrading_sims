@@ -16,7 +16,8 @@ function deliveryPaymentTestUser(string $role): User
     $userNumber++;
 
     return User::create([
-        'name' => ucfirst($role) . ' Tester',
+        'first_name' => ucfirst($role),
+        'last_name' => 'Tester',
         'email' => "{$role}-payment-tester-{$userNumber}@example.com",
         'password' => 'password',
         'role' => $role,
@@ -44,7 +45,7 @@ function deliveryPaymentTestOrder(User $creator, string $paymentMethod = 'cash',
     ]);
 
     return app(OrderService::class)->createOrder(
-        ['name' => 'Delivery Customer', 'phone' => '09170000000', 'address' => $fulfillmentType === 'pickup' ? 'Store pickup' : 'Delivery Test Address'],
+        ['first_name' => 'Delivery', 'last_name' => 'Customer', 'phone' => '09170000000', 'address' => $fulfillmentType === 'pickup' ? 'Store pickup' : 'Delivery Test Address'],
         [['product_id' => $product->id, 'quantity' => 1, 'has_own_cylinder' => true]],
         $fulfillmentType === 'pickup' ? 'Store pickup' : 'Delivery Test Address',
         $paymentMethod,
@@ -108,7 +109,8 @@ it('records a delivery schedule, order timestamp, and printable invoice when an 
 
     $this->actingAs($admin)
         ->post(route('admin.orders.store'), [
-            'customer_name' => 'Scheduled Customer',
+            'customer_first_name' => 'Scheduled',
+            'customer_last_name' => 'Customer',
             'customer_phone' => '09170000001',
             'fulfillment_type' => 'delivery',
             'delivery_address' => 'Scheduled Delivery Address',
@@ -122,7 +124,7 @@ it('records a delivery schedule, order timestamp, and printable invoice when an 
         ])
         ->assertRedirect();
 
-    $order = Order::whereHas('customer', fn ($query) => $query->where('name', 'Scheduled Customer'))->firstOrFail();
+    $order = Order::whereHas('customer', fn ($query) => $query->where('first_name', 'Scheduled')->where('last_name', 'Customer'))->firstOrFail();
     expect($order->fulfillment_type)->toBe('delivery')
         ->and($order->scheduled_delivery_date->toDateString())->toBe($scheduledDate)
         ->and($order->ordered_at)->not->toBeNull()
@@ -143,7 +145,8 @@ it('creates pickup orders without a delivery address or delivery schedule and pr
 
     $this->actingAs($admin)
         ->post(route('admin.orders.store'), [
-            'customer_name' => 'Pickup Customer',
+            'customer_first_name' => 'Pickup',
+            'customer_last_name' => 'Customer',
             'customer_phone' => '09170000002',
             'fulfillment_type' => 'pickup',
             'payment_method' => 'cash',
@@ -155,7 +158,7 @@ it('creates pickup orders without a delivery address or delivery schedule and pr
         ])
         ->assertRedirect();
 
-    $order = Order::whereHas('customer', fn ($query) => $query->where('name', 'Pickup Customer'))->firstOrFail();
+    $order = Order::whereHas('customer', fn ($query) => $query->where('first_name', 'Pickup')->where('last_name', 'Customer'))->firstOrFail();
     expect($order->fulfillment_type)->toBe('pickup')
         ->and($order->delivery_address)->toBe('Store pickup')
         ->and($order->scheduled_delivery_date)->toBeNull()

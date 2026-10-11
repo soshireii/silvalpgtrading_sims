@@ -11,7 +11,7 @@ class CylinderController extends Controller
     public function index()
     {
         $cylinders = Cylinder::with('products.cylinder')
-            ->withCount(['orderItems', 'inventoryLogs'])
+            ->withCount(['orderItems', 'stockMovements'])
             ->orderBy('name')
             ->get();
 
@@ -55,8 +55,8 @@ class CylinderController extends Controller
 
     public function destroy(Cylinder $cylinder)
     {
-        if ($cylinder->products()->exists() || $cylinder->orderItems()->exists() || $cylinder->inventoryLogs()->exists()) {
-            return back()->with('error', 'This cylinder size is linked to gas products or history and cannot be deleted.');
+        if ($cylinder->products()->exists()) {
+            return back()->with('error', 'This cylinder size is used by gas products and cannot be deleted.');
         }
 
         $cylinder->delete();
@@ -66,7 +66,10 @@ class CylinderController extends Controller
 
     public function logs(Cylinder $cylinder)
     {
-        $logs = $cylinder->inventoryLogs()->with('creator', 'order')->latest()->paginate(20);
+        $logs = $cylinder->stockMovements()
+            ->with('creator', 'order', 'purchaseOrder', 'product')
+            ->latest('stock_movements.created_at')
+            ->paginate(20);
         $inventoryItemName = $cylinder->name . ' cylinder';
         $backRoute = 'admin.cylinders.index';
 
