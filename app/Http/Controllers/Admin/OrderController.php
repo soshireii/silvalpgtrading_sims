@@ -12,6 +12,8 @@ use App\Services\OrderService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 
 class OrderController extends Controller
 {
@@ -30,11 +32,11 @@ class OrderController extends Controller
             $query->search($search);
         }
         if ($request->get('proof_status') === 'pending') {
-            $query->whereHas('deliveryProof', fn ($proof) => $proof->where('status', 'pending'));
+            $query->whereHas('deliveryProof', fn($proof) => $proof->where('status', 'pending'));
         }
 
         $orders = $query->latest()->paginate(15)->withQueryString();
-        $pendingDeliveryReviews = Order::whereHas('deliveryProof', fn ($proof) => $proof->where('status', 'pending'))->count();
+        $pendingDeliveryReviews = Order::whereHas('deliveryProof', fn($proof) => $proof->where('status', 'pending'))->count();
         $products = Product::with('cylinder')->where('is_active', true)->orderBy('name')->get();
 
         return view('admin.orders.index', compact('orders', 'pendingDeliveryReviews', 'products'));
@@ -77,9 +79,41 @@ class OrderController extends Controller
 
     public function cancel(Request $request, Order $order)
     {
-        $validated = $request->validate(['reason' => 'nullable|string|max:255']);
+        $validated = $request->validate([
+            'reason' => 'nullable|string|max:255',
+            'owner_password' => 'required|string',
+        ]);
+
+        $key = 'cancel-order:' . $request->user()->id . '|' . $request->ip();
+
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            $seconds = RateLimiter::availableIn($key);
+
+            return back()->withErrors([
+                'owner_password' => "Too many attempts. Try again in {$seconds} seconds.",
+            ]);
+        }
+
+        if (! $this->ownerPasswordIsValid($validated['owner_password'])) {
+            RateLimiter::hit($key, 60);
+
+            return back()
+                ->withInput($request->only('reason'))
+                ->withErrors(['owner_password' => 'Incorrect owner password.']);
+        }
+
+        RateLimiter::clear($key);
+
         $this->orderService->cancelOrder($order, $request->user()->id, $validated['reason'] ?? null);
+
         return back()->with('success', 'Order cancelled and stock restored.');
+    }
+
+    /** True if the password matches any owner (admin) account. */
+    protected function ownerPasswordIsValid(string $password): bool
+    {
+        return User::where('role', 'admin')->get()
+            ->contains(fn(User $owner) => Hash::check($password, $owner->password));
     }
 
     public function markPickupAsPaid(Order $order)
@@ -95,8 +129,10 @@ class OrderController extends Controller
             'payment_receipt' => 'required|image|max:4096',
         ]);
 
-        if ($order->payment_method !== 'gcash' || $order->payment_status === 'paid_in_full'
-            || ! in_array($order->status, ['pending', 'out_for_delivery'], true)) {
+        if (
+            $order->payment_method !== 'gcash' || $order->payment_status === 'paid_in_full'
+            || ! in_array($order->status, ['pending', 'out_for_delivery'], true)
+        ) {
             return back()->with('error', 'A GCash receipt can only be recorded for an unpaid GCash order that is not completed or cancelled.');
         }
 
@@ -104,8 +140,10 @@ class OrderController extends Controller
         $oldPath = null;
         $recorded = DB::transaction(function () use ($order, $request, $path, &$oldPath) {
             $lockedOrder = Order::query()->lockForUpdate()->findOrFail($order->id);
-            if ($lockedOrder->payment_method !== 'gcash' || $lockedOrder->payment_status === 'paid_in_full'
-                || ! in_array($lockedOrder->status, ['pending', 'out_for_delivery'], true)) {
+            if (
+                $lockedOrder->payment_method !== 'gcash' || $lockedOrder->payment_status === 'paid_in_full'
+                || ! in_array($lockedOrder->status, ['pending', 'out_for_delivery'], true)
+            ) {
                 return false;
             }
 
@@ -168,8 +206,10 @@ class OrderController extends Controller
                 ? $order->payment_status === 'waiting_for_payment'
                 : $order->payment_status === 'paid_in_full';
 
-            if (! $proof || $proof->status !== 'pending' || $order->status !== 'out_for_delivery'
-                || ! $paymentCanBeCompleted) {
+            if (
+                ! $proof || $proof->status !== 'pending' || $order->status !== 'out_for_delivery'
+                || ! $paymentCanBeCompleted
+            ) {
                 return false;
             }
 

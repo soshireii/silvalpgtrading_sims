@@ -91,7 +91,8 @@ class DeliveryStaffController extends Controller
             $deliveryStaff->update(['password' => Hash::make($validated['password'])]);
         }
 
-        return back()->with('success', 'Delivery staff account updated.');
+        return redirect()->route('admin.delivery-staff.index')
+            ->with('success', 'Delivery staff account updated.');
     }
 
     /**

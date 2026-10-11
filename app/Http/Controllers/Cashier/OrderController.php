@@ -9,6 +9,8 @@ use App\Models\Product;
 use App\Models\User;
 use App\Services\OrderService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 
 class OrderController extends Controller
 {
@@ -70,8 +72,33 @@ class OrderController extends Controller
 
     public function cancel(Request $request, Order $order)
     {
-        $validated = $request->validate(['reason' => 'nullable|string|max:255']);
+        $validated = $request->validate([
+            'reason' => 'nullable|string|max:255',
+            'owner_password' => 'required|string',
+        ]);
+
+        $key = 'cancel-order:' . $request->user()->id . '|' . $request->ip();
+
+        if (RateLimiter::tooManyAttempts($key, 5)) {
+            $seconds = RateLimiter::availableIn($key);
+
+            return back()->withErrors([
+                'owner_password' => "Too many attempts. Try again in {$seconds} seconds.",
+            ]);
+        }
+
+        if (! $this->ownerPasswordIsValid($validated['owner_password'])) {
+            RateLimiter::hit($key, 60);
+
+            return back()
+                ->withInput($request->only('reason'))
+                ->withErrors(['owner_password' => 'Incorrect owner password.']);
+        }
+
+        RateLimiter::clear($key);
+
         $this->orderService->cancelOrder($order, $request->user()->id, $validated['reason'] ?? null);
+
         return back()->with('success', 'Order cancelled and stock restored.');
     }
 
@@ -80,5 +107,12 @@ class OrderController extends Controller
         $this->orderService->markPickupAsPaid($order);
 
         return back()->with('success', "Pick-up order {$order->order_code} marked paid and completed.");
+    }
+
+    /** True if the password matches any owner (admin) account. */
+    protected function ownerPasswordIsValid(string $password): bool
+    {
+        return User::where('role', 'admin')->get()
+            ->contains(fn(User $owner) => Hash::check($password, $owner->password));
     }
 }

@@ -11,20 +11,20 @@
                     <x-badge :color="$order->payment_status === 'paid_in_full' ? 'green' : 'yellow'" :label="$order->payment_status_label" />
                 </div>
                 @if($order->gcashPaymentProof)
-                    <img src="{{ asset('storage/' . $order->gcashPaymentProof->image_path) }}" alt="GCash payment receipt" class="rounded-lg border border-gray-200 max-h-80 object-contain">
-                    <p class="text-xs text-gray-400 mt-2">Receipt recorded by {{ $order->gcashPaymentProof->uploader->name ?? 'Admin' }} on {{ $order->gcashPaymentProof->uploaded_at->format('M j, Y g:i A') }}</p>
+                <img src="{{ asset('storage/' . $order->gcashPaymentProof->image_path) }}" alt="GCash payment receipt" class="rounded-lg border border-gray-200 max-h-80 object-contain">
+                <p class="text-xs text-gray-400 mt-2">Receipt recorded by {{ $order->gcashPaymentProof->uploader->name ?? 'Admin' }} on {{ $order->gcashPaymentProof->uploaded_at->format('M j, Y g:i A') }}</p>
                 @elseif($order->payment_status !== 'paid_in_full' && !in_array($order->status, ['completed', 'cancelled']))
-                    <p class="text-sm text-gray-600 mb-4">GCash orders must be paid before delivery assignment. Upload the customer’s GCash payment screenshot or receipt to mark this order Paid.</p>
-                    <form method="POST" action="{{ route('admin.orders.gcash-receipt', $order) }}" enctype="multipart/form-data"
-                          onsubmit="return confirm('Upload this GCash receipt and mark the order Paid? Confirm that the payment was received.');" class="space-y-3">
-                        @csrf
-                        <label class="block text-xs font-medium text-gray-600">GCash screenshot or receipt</label>
-                        <input type="file" name="payment_receipt" accept="image/*" required
-                               class="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-maroon-50 file:text-maroon-700 file:text-xs file:font-medium">
-                        <button type="submit" class="w-full bg-maroon-600 hover:bg-maroon-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg">
-                            Upload Receipt &amp; Mark Paid
-                        </button>
-                    </form>
+                <p class="text-sm text-gray-600 mb-4">GCash orders must be paid before delivery assignment. Upload the customer’s GCash payment screenshot or receipt to mark this order Paid.</p>
+                <form method="POST" action="{{ route('admin.orders.gcash-receipt', $order) }}" enctype="multipart/form-data"
+                    onsubmit="return confirm('Upload this GCash receipt and mark the order Paid? Confirm that the payment was received.');" class="space-y-3">
+                    @csrf
+                    <label class="block text-xs font-medium text-gray-600">GCash screenshot or receipt</label>
+                    <input type="file" name="payment_receipt" accept="image/*" required
+                        class="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-maroon-50 file:text-maroon-700 file:text-xs file:font-medium">
+                    <button type="submit" class="w-full bg-maroon-600 hover:bg-maroon-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg">
+                        Upload Receipt &amp; Mark Paid
+                    </button>
+                </form>
                 @endif
             </div>
             @endif
@@ -75,35 +75,35 @@
                 <img src="{{ asset('storage/' . $order->deliveryProof->proof_image_path) }}" alt="Delivery proof" class="rounded-lg border border-gray-200 max-h-80 object-cover">
                 <p class="text-xs text-gray-400 mt-2">Submitted by {{ $order->deliveryProof->deliveryStaff->name ?? 'Delivery staff' }} on {{ $order->deliveryProof->created_at->format('M j, Y g:i A') }}</p>
                 @if($order->deliveryProof->remarks)
-                    <p class="text-sm text-gray-600 mt-3">Staff note: {{ $order->deliveryProof->remarks }}</p>
+                <p class="text-sm text-gray-600 mt-3">Staff note: {{ $order->deliveryProof->remarks }}</p>
                 @endif
                 @if($order->deliveryProof->review_note)
-                    <p class="text-sm text-gray-600 mt-2">Review note: {{ $order->deliveryProof->review_note }}</p>
+                <p class="text-sm text-gray-600 mt-2">Review note: {{ $order->deliveryProof->review_note }}</p>
                 @endif
                 @if($order->deliveryProof->status === 'pending')
-                    <p class="text-sm text-status-warning mt-3">Review this photo before marking the order delivered{{ $order->payment_method === 'cash' ? ' and paid in full' : '' }}.</p>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                        <form method="POST" action="{{ route('admin.orders.delivery-proof.review', $order) }}"
-                              onsubmit="return confirm('Approve this delivery photo? The order will be marked delivered{{ $order->payment_method === 'cash' ? ' and Paid in Full' : '' }}.');">
-                            @csrf
-                            <input type="hidden" name="decision" value="approve">
-                            <button type="submit" class="w-full bg-status-success text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:opacity-90">
-                                Confirm Photo &amp; Mark Delivered
-                            </button>
-                        </form>
-                        <form method="POST" action="{{ route('admin.orders.delivery-proof.review', $order) }}"
-                              onsubmit="return confirm('Deny this delivery photo? The order will stay out for delivery{{ $order->payment_method === 'cash' ? ' and remain Waiting for Payment' : '' }}.');">
-                            @csrf
-                            <input type="hidden" name="decision" value="reject">
-                            <input type="text" name="review_note" maxlength="500" placeholder="Reason (optional)"
-                                   class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500 mb-2">
-                            <button type="submit" class="w-full bg-status-danger-bg text-status-danger text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-red-200">
-                                Deny Photo
-                            </button>
-                        </form>
-                    </div>
+                <p class="text-sm text-status-warning mt-3">Review this photo before marking the order delivered{{ $order->payment_method === 'cash' ? ' and paid in full' : '' }}.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                    <form method="POST" action="{{ route('admin.orders.delivery-proof.review', $order) }}"
+                        onsubmit="return confirm('Approve this delivery photo? The order will be marked delivered{{ $order->payment_method === 'cash' ? ' and Paid in Full' : '' }}.');">
+                        @csrf
+                        <input type="hidden" name="decision" value="approve">
+                        <button type="submit" class="w-full bg-status-success text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:opacity-90">
+                            Confirm Photo &amp; Mark Delivered
+                        </button>
+                    </form>
+                    <form method="POST" action="{{ route('admin.orders.delivery-proof.review', $order) }}"
+                        onsubmit="return confirm('Deny this delivery photo? The order will stay out for delivery{{ $order->payment_method === 'cash' ? ' and remain Waiting for Payment' : '' }}.');">
+                        @csrf
+                        <input type="hidden" name="decision" value="reject">
+                        <input type="text" name="review_note" maxlength="500" placeholder="Reason (optional)"
+                            class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500 mb-2">
+                        <button type="submit" class="w-full bg-status-danger-bg text-status-danger text-sm font-medium px-4 py-2.5 rounded-lg hover:bg-red-200">
+                            Deny Photo
+                        </button>
+                    </form>
+                </div>
                 @elseif($order->deliveryProof->status === 'approved')
-                    <p class="text-xs text-gray-400 mt-2">Approved {{ $order->deliveryProof->reviewed_at?->format('M j, Y g:i A') }}</p>
+                <p class="text-xs text-gray-400 mt-2">Approved {{ $order->deliveryProof->reviewed_at?->format('M j, Y g:i A') }}</p>
                 @endif
             </div>
             @endif
@@ -128,23 +128,23 @@
                 <div class="text-xs text-gray-500 mt-2">Invoice: {{ $order->invoice_number }}</div>
                 <div class="text-xs text-gray-500 mt-1">Fulfillment: {{ $order->fulfillment_type === 'pickup' ? 'Pick-up' : 'Delivery' }}</div>
                 @if($order->fulfillment_type === 'delivery')
-                    <div class="text-xs text-gray-500 mt-1">Scheduled delivery: {{ $order->scheduled_delivery_date?->format('M j, Y') ?? 'Not scheduled' }}</div>
+                <div class="text-xs text-gray-500 mt-1">Scheduled delivery: {{ $order->scheduled_delivery_date?->format('M j, Y') ?? 'Not scheduled' }}</div>
                 @endif
                 @if($order->fulfillment_type === 'pickup' && $order->status === 'pending' && $order->payment_status !== 'paid_in_full')
-                    @if($order->payment_method === 'cash')
-                        <form method="POST" action="{{ route('admin.orders.pickup-paid', $order) }}" class="mt-4"
-                              onsubmit="return confirm('Confirm that payment was received and mark this pick-up order as paid and completed?');">
-                            @csrf
-                            <button type="submit" class="w-full bg-status-success text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:opacity-90">Mark as Paid</button>
-                        </form>
-                    @else
-                        <p class="mt-3 text-xs text-status-warning">Upload the GCash receipt above to mark this pick-up order paid and complete it.</p>
-                    @endif
+                @if($order->payment_method === 'cash')
+                <form method="POST" action="{{ route('admin.orders.pickup-paid', $order) }}" class="mt-4"
+                    onsubmit="return confirm('Confirm that payment was received and mark this pick-up order as paid and completed?');">
+                    @csrf
+                    <button type="submit" class="w-full bg-status-success text-white text-sm font-medium px-4 py-2.5 rounded-lg hover:opacity-90">Mark as Paid</button>
+                </form>
+                @else
+                <p class="mt-3 text-xs text-status-warning">Upload the GCash receipt above to mark this pick-up order paid and complete it.</p>
+                @endif
                 @elseif($order->fulfillment_type === 'pickup' && $order->status === 'completed')
-                    <p class="mt-3 text-sm font-medium text-status-success">Pick-up completed and paid.</p>
+                <p class="mt-3 text-sm font-medium text-status-success">Pick-up completed and paid.</p>
                 @endif
                 @if($order->notes)
-                    <p class="text-xs text-gray-500 mt-2 italic">{{ $order->notes }}</p>
+                <p class="text-xs text-gray-500 mt-2 italic">{{ $order->notes }}</p>
                 @endif
             </div>
 
@@ -152,14 +152,14 @@
             <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
                 <h2 class="font-semibold text-gray-900 mb-3">Assign Delivery</h2>
                 @if($order->payment_method === 'gcash' && $order->payment_status !== 'paid_in_full')
-                    <p class="text-sm text-status-warning">Upload and confirm the GCash receipt above before assigning this order for delivery.</p>
+                <p class="text-sm text-status-warning">Upload and confirm the GCash receipt above before assigning this order for delivery.</p>
                 @else
                 <form method="POST" action="{{ route('admin.orders.assign', $order) }}" class="space-y-3">
                     @csrf
                     <select name="delivery_staff_id" required class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
                         <option value="">Select delivery staff…</option>
                         @foreach($deliveryStaff as $staff)
-                            <option value="{{ $staff->id }}">{{ $staff->name }}</option>
+                        <option value="{{ $staff->id }}">{{ $staff->name }}</option>
                         @endforeach
                     </select>
                     <button type="submit" class="w-full bg-maroon-600 hover:bg-maroon-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg">
@@ -174,9 +174,17 @@
             <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
                 <h2 class="font-semibold text-gray-900 mb-3">Cancel Order</h2>
                 <form method="POST" action="{{ route('admin.orders.cancel', $order) }}"
-                      onsubmit="return confirm('Cancel this order and restock the items?');" class="space-y-3">
+                    onsubmit="return confirm('Cancel this order and restock the items?');" class="space-y-3">
                     @csrf
-                    <input type="text" name="reason" placeholder="Reason (optional)" class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                    <input type="text" name="reason" value="{{ old('reason') }}" placeholder="Reason (optional)"
+                        class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                    <div>
+                        <input type="password" name="owner_password" required autocomplete="off" placeholder="Owner password"
+                            class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                        @error('owner_password')
+                        <p class="mt-1 text-xs text-status-danger">{{ $message }}</p>
+                        @enderror
+                    </div>
                     <button type="submit" class="w-full bg-status-danger-bg hover:bg-red-200 text-status-danger text-sm font-medium px-4 py-2.5 rounded-lg">
                         Cancel Order
                     </button>
