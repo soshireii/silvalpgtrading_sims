@@ -20,8 +20,8 @@ class DeliveryStaffController extends Controller
     {
         $staff = User::deliveryStaff()
             ->withCount([
-                'deliveries as active_deliveries_count' => fn ($q) => $q->where('status', 'out_for_delivery'),
-                'deliveries as completed_deliveries_count' => fn ($q) => $q->where('status', 'completed'),
+                'deliveries as active_deliveries_count' => fn($q) => $q->where('status', 'out_for_delivery'),
+                'deliveries as completed_deliveries_count' => fn($q) => $q->where('status', 'completed'),
             ])
             ->orderByDesc('is_active')
             ->orderByName()
@@ -41,7 +41,7 @@ class DeliveryStaffController extends Controller
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
             'email' => 'required|email|max:255|unique:users,email',
-            'phone' => 'required|string|max:30',
+            'phone' => ['required', 'regex:/^[0-9]{7,15}$/'],
             'password' => 'required|string|min:8|confirmed',
         ]);
 
@@ -74,7 +74,7 @@ class DeliveryStaffController extends Controller
             'first_name' => 'required|string|max:100',
             'last_name' => 'required|string|max:100',
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($deliveryStaff->id)],
-            'phone' => 'required|string|max:30',
+            'phone' => ['required', 'regex:/^[0-9]{7,15}$/'],
             'is_active' => 'required|boolean',
             'password' => 'nullable|string|min:8|confirmed',
         ]);

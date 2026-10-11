@@ -22,7 +22,7 @@
             </div>
             <div>
                 <label class="block text-xs font-medium text-gray-600 mb-1">Phone number</label>
-                <input type="text" name="phone" value="{{ old('phone', $staff->phone) }}" required
+                <input type="text" name="phone" value="{{ old('phone', $staff->phone) }}" required inputmode="numeric" pattern="[0-9]*" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                     class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
             </div>
 

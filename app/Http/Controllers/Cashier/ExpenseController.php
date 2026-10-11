@@ -48,4 +48,43 @@ class ExpenseController extends Controller
 
         return back()->with('success', 'Expense recorded.');
     }
+    public function storeCategory(Request $request)
+    {
+        $validated = $request->validate([
+            'category_name' => ['required', 'string', 'max:100', Rule::unique('expense_categories', 'name')],
+        ]);
+
+        ExpenseCategory::create(['name' => trim($validated['category_name'])]);
+
+        return back()->with('success', 'Expense category added.');
+    }
+
+    public function updateCategory(Request $request, ExpenseCategory $expenseCategory)
+    {
+        $validated = $request->validateWithBag('editCategory', [
+            'name' => [
+                'required',
+                'string',
+                'max:100',
+                Rule::unique('expense_categories', 'name')->ignore($expenseCategory->id),
+            ],
+        ]);
+
+        $expenseCategory->update(['name' => trim($validated['name'])]);
+
+        return back()->with('success', 'Expense category updated.');
+    }
+
+    public function destroyCategory(ExpenseCategory $expenseCategory)
+    {
+        if (Expense::where('expense_category_id', $expenseCategory->id)->exists()) {
+            return back()->withErrors([
+                'name' => "\"{$expenseCategory->name}\" has recorded expenses and can't be deleted. Rename it instead.",
+            ], 'editCategory');
+        }
+
+        $expenseCategory->delete();
+
+        return back()->with('success', 'Expense category deleted.');
+    }
 }

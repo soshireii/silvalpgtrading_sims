@@ -7,35 +7,67 @@ $accent = [
 'red' => 'border-l-status-danger',
 ];
 $showGasFilter = in_array($f['type'], ['gas', 'cylinder'], true);
+
+// Which quick range matches the dates on screen (first match wins).
+$activePreset = '';
+foreach ($presets as $preset) {
+if ($preset['from'] === $f['from'] && $preset['to'] === $f['to']) {
+$activePreset = $preset['label'];
+break;
+}
+}
+$input = 'rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500';
 @endphp
 
 <x-app-layout title="Reports" header="Reports">
 
-    {{-- ============ Filters ============ --}}
-    <form method="GET" action="{{ route('admin.reports.index') }}" class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4">
-        <input type="hidden" name="report" value="{{ $f['type'] }}">
-
+    {{-- ============ One compact filter bar ============ --}}
+    <form id="report-filters" method="GET" action="{{ route('admin.reports.index') }}"
+        class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-5">
         <div class="flex flex-wrap items-end gap-3">
+
+            <div class="w-full sm:w-56">
+                <label for="report-type" class="block text-xs font-medium text-gray-600 mb-1">Report</label>
+                <select id="report-type" name="report" onchange="this.form.submit()" class="w-full font-medium {{ $input }}">
+                    @foreach($types as $key => $label)
+                    <option value="{{ $key }}" @selected($f['type']===$key)>{{ $label }}</option>
+                    @endforeach
+                </select>
+            </div>
+
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">From</label>
-                <input type="date" name="from" value="{{ $f['from'] }}" class="rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                <label for="range-preset" class="block text-xs font-medium text-gray-600 mb-1">Period</label>
+                <select id="range-preset" class="{{ $input }}">
+                    <option value="">Custom range</option>
+                    @foreach($presets as $preset)
+                    <option value="{{ $preset['label'] }}" data-from="{{ $preset['from'] }}" data-to="{{ $preset['to'] }}"
+                        @selected($activePreset===$preset['label'])>{{ $preset['label'] }}</option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div>
+                <label for="from" class="block text-xs font-medium text-gray-600 mb-1">From</label>
+                <input id="from" type="date" name="from" value="{{ $f['from'] }}" class="{{ $input }}">
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">To</label>
-                <input type="date" name="to" value="{{ $f['to'] }}" class="rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                <label for="to" class="block text-xs font-medium text-gray-600 mb-1">To</label>
+                <input id="to" type="date" name="to" value="{{ $f['to'] }}" class="{{ $input }}">
             </div>
+
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Group by</label>
-                <select name="group" class="rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                <label for="group" class="block text-xs font-medium text-gray-600 mb-1">Group by</label>
+                <select id="group" name="group" class="{{ $input }}">
                     @foreach(['auto' => 'Auto', 'day' => 'Day', 'week' => 'Week', 'month' => 'Month'] as $value => $label)
                     <option value="{{ $value }}" @selected($f['group_requested']===$value)>{{ $label }}</option>
                     @endforeach
                 </select>
             </div>
+
             @if($showGasFilter)
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Gas</label>
-                <select name="product" class="rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                <label for="product" class="block text-xs font-medium text-gray-600 mb-1">Gas</label>
+                <select id="product" name="product" class="{{ $input }}">
                     <option value="">All gas</option>
                     @foreach($products as $p)
                     <option value="{{ $p['id'] }}" @selected($f['product']===$p['id'])>{{ $p['name'] }}</option>
@@ -43,49 +75,32 @@ $showGasFilter = in_array($f['type'], ['gas', 'cylinder'], true);
                 </select>
             </div>
             @endif
+
             <button type="submit" class="bg-maroon-600 hover:bg-maroon-700 text-white text-sm font-medium px-4 py-2 rounded-lg">Run Report</button>
 
-            <div class="ml-auto flex flex-wrap gap-2">
-                <a href="{{ route('admin.reports.export', $base + ['report' => $f['type']]) }}"
+            {{-- One export menu instead of two buttons --}}
+            <div class="relative ml-auto" x-data="{ open: false }" x-on:click.outside="open = false" x-on:keydown.escape.window="open = false">
+                <button type="button" x-on:click="open = !open"
                     class="inline-flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium px-3 py-2 rounded-lg">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
                     </svg>
-                    PDF — this report
-                </a>
-                <a href="{{ route('admin.reports.export', $base + ['report' => 'all']) }}"
-                    class="inline-flex items-center gap-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-medium px-3 py-2 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M4 20h16" />
+                    Export PDF
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                     </svg>
-                    PDF — all reports
-                </a>
+                </button>
+                <div x-show="open" x-cloak class="absolute right-0 z-20 mt-1 w-56 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
+                    <a href="{{ route('admin.reports.export', $base + ['report' => $f['type']]) }}"
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">This report only</a>
+                    <a href="{{ route('admin.reports.export', $base + ['report' => 'all']) }}"
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">All reports (full document)</a>
+                </div>
             </div>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-gray-100">
-            <span class="text-xs text-gray-400 mr-1">Quick range:</span>
-            @foreach($presets as $preset)
-            @php $active = $preset['from'] === $f['from'] && $preset['to'] === $f['to']; @endphp
-            <a href="{{ route('admin.reports.index', array_filter(['report' => $f['type'], 'from' => $preset['from'], 'to' => $preset['to'], 'product' => $f['product']])) }}"
-                class="text-xs font-medium px-3 py-1 rounded-full border {{ $active ? 'bg-maroon-600 border-maroon-600 text-white' : 'bg-white border-gray-300 text-gray-600 hover:bg-gray-50' }}">
-                {{ $preset['label'] }}
-            </a>
-            @endforeach
         </div>
     </form>
 
-    {{-- ============ Report tabs ============ --}}
-    <div class="flex gap-1 overflow-x-auto border-b border-gray-200 mb-5">
-        @foreach($types as $key => $label)
-        <a href="{{ route('admin.reports.index', $base + ['report' => $key]) }}"
-            class="whitespace-nowrap px-4 py-2.5 text-sm font-medium border-b-2 -mb-px {{ $f['type'] === $key ? 'border-maroon-600 text-maroon-700' : 'border-transparent text-gray-500 hover:text-gray-800 hover:border-gray-300' }}">
-            {{ $label }}
-        </a>
-        @endforeach
-    </div>
-
-    {{-- ============ Section header ============ --}}
+    {{-- ============ Title ============ --}}
     <div class="mb-5">
         <h2 class="text-lg font-semibold text-gray-900">{{ $report['title'] }}</h2>
         @if($report['description'])
@@ -100,7 +115,7 @@ $showGasFilter = in_array($f['type'], ['gas', 'cylinder'], true);
 
     {{-- ============ KPI cards ============ --}}
     @if(!empty($report['kpis']))
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
         @foreach($report['kpis'] as $kpi)
         <div class="bg-white rounded-xl border border-gray-200 border-l-4 {{ $accent[$kpi['tone']] ?? $accent['default'] }} shadow-sm p-4">
             <p class="text-xs text-gray-500">{{ $kpi['label'] }}</p>
@@ -115,7 +130,7 @@ $showGasFilter = in_array($f['type'], ['gas', 'cylinder'], true);
 
     {{-- ============ Insights ============ --}}
     @if(!empty($report['insights']))
-    <div class="bg-maroon-50 border border-maroon-200 rounded-xl p-4 mb-6">
+    <div class="bg-maroon-50 border border-maroon-200 rounded-xl p-4 mb-5">
         <h3 class="text-sm font-semibold text-maroon-700 mb-2">Quick insights</h3>
         <ul class="space-y-1 text-sm text-gray-700 list-disc list-inside">
             @foreach($report['insights'] as $line)
@@ -130,7 +145,7 @@ $showGasFilter = in_array($f['type'], ['gas', 'cylinder'], true);
     <div id="chart-warning" class="hidden mb-4 rounded-lg border border-yellow-200 bg-status-warning-bg px-4 py-3 text-sm text-status-warning">
         The chart library could not be loaded (it needs internet access to cdnjs.cloudflare.com). The tables below still show all the numbers.
     </div>
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-5">
         @foreach($report['charts'] as $i => $chart)
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 {{ !empty($chart['wide']) ? 'lg:col-span-2' : '' }}">
             <h3 class="text-sm font-semibold text-gray-900 mb-3">{{ $chart['title'] }}</h3>
@@ -146,19 +161,27 @@ $showGasFilter = in_array($f['type'], ['gas', 'cylinder'], true);
     </div>
     @endif
 
-    {{-- ============ Tables ============ --}}
+    {{-- ============ Tables (click a title to collapse it) ============ --}}
     @foreach($report['tables'] as $table)
-    <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-6 overflow-hidden">
-        <div class="px-4 pt-4">
-            <h3 class="text-sm font-semibold text-gray-900">{{ $table['title'] }}</h3>
-            @if($table['note'])
-            <p class="text-xs text-gray-400 mt-0.5">{{ $table['note'] }}</p>
-            @endif
-        </div>
-        <div class="overflow-x-auto mt-3">
+    <details open class="group bg-white rounded-xl border border-gray-200 shadow-sm mb-5 overflow-hidden">
+        <summary class="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer select-none list-none [&::-webkit-details-marker]:hidden">
+            <div>
+                <h3 class="text-sm font-semibold text-gray-900">{{ $table['title'] }}</h3>
+                @if($table['note'])
+                <p class="text-xs text-gray-400 mt-0.5">{{ $table['note'] }}</p>
+                @endif
+            </div>
+            <div class="flex items-center gap-2 text-xs text-gray-400 shrink-0">
+                <span>{{ count($table['rows']) }} row(s)</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+            </div>
+        </summary>
+        <div class="overflow-x-auto border-t border-gray-100">
             <table class="w-full text-sm">
                 <thead class="bg-gray-50">
-                    <tr class="text-gray-500 border-y border-gray-100">
+                    <tr class="text-gray-500 border-b border-gray-100">
                         @foreach($table['columns'] as $col)
                         <th class="py-2.5 px-4 font-medium whitespace-nowrap {{ $col['align'] === 'right' ? 'text-right' : 'text-left' }}">{{ $col['label'] }}</th>
                         @endforeach
@@ -194,8 +217,33 @@ $showGasFilter = in_array($f['type'], ['gas', 'cylinder'], true);
                 @endif
             </table>
         </div>
-    </div>
+    </details>
     @endforeach
+
+    {{-- ============ "Period" dropdown fills in the dates and reloads ============ --}}
+    <script>
+        (function() {
+            const form = document.getElementById('report-filters');
+            const preset = document.getElementById('range-preset');
+            if (!form || !preset) return;
+
+            preset.addEventListener('change', function() {
+                const option = preset.selectedOptions[0];
+                if (!option || !option.dataset.from) return; // "Custom range" does nothing
+                form.elements['from'].value = option.dataset.from;
+                form.elements['to'].value = option.dataset.to;
+                form.elements['group'].value = 'auto'; // let the system pick the best grouping
+                form.submit();
+            });
+
+            // Typing your own dates switches the dropdown back to "Custom range".
+            ['from', 'to'].forEach(function(name) {
+                form.elements[name].addEventListener('change', function() {
+                    preset.value = '';
+                });
+            });
+        })();
+    </script>
 
     {{-- ============ Chart.js ============ --}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>

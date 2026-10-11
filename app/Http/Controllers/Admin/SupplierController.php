@@ -55,7 +55,7 @@ class SupplierController extends Controller
             'name' => ['required', 'string', 'max:255', Rule::unique('suppliers', 'name')->ignore($supplier?->id)],
             'contact_first_name' => 'nullable|string|max:100',
             'contact_last_name' => 'nullable|string|max:100',
-            'phone' => 'nullable|string|max:30',
+            'phone' => ['nullable', 'regex:/^[0-9]{7,15}$/'],
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string|max:255',
         ];

@@ -5,30 +5,30 @@
     when the page is loaded with ?new=1 or the form comes back with validation errors.
 --}}
 @php
-    $productsForJs = $products->map(fn ($p) => [
-        'id' => $p->id,
-        'name' => $p->name,
-        'cylinder_name' => $p->cylinder?->name,
-        'gas_price' => $p->gas_price,
-        'current_stock' => $p->current_stock,
-        'cylinder_price' => $p->cylinder?->is_active ? $p->cylinder->price : null,
-    ]);
-    $startItems = old('items')
-        ? array_values(old('items'))
-        : [['product_id' => '', 'quantity' => 1, 'has_own_cylinder' => true]];
+$productsForJs = $products->map(fn ($p) => [
+'id' => $p->id,
+'name' => $p->name,
+'cylinder_name' => $p->cylinder?->name,
+'gas_price' => $p->gas_price,
+'current_stock' => $p->current_stock,
+'cylinder_price' => $p->cylinder?->is_active ? $p->cylinder->price : null,
+]);
+$startItems = old('items')
+? array_values(old('items'))
+: [['product_id' => '', 'quantity' => 1, 'has_own_cylinder' => true]];
 @endphp
 
 <x-modal name="new-order" :show="$errors->any() || request()->boolean('new')" maxWidth="4xl" focusable>
     <form method="POST" action="{{ route($storeRoute) }}"
-          x-data="orderForm({{ \Illuminate\Support\Js::from($productsForJs) }}, {{ \Illuminate\Support\Js::from($startItems) }}, @js(old('fulfillment_type', 'delivery')))"
-          @submit="if (items.length === 0) { $event.preventDefault(); alert('Add at least one product.'); }"
-          class="flex max-h-[90vh] flex-col">
+        x-data="orderForm({{ \Illuminate\Support\Js::from($productsForJs) }}, {{ \Illuminate\Support\Js::from($startItems) }}, @js(old('fulfillment_type', 'delivery')))"
+        @submit="if (items.length === 0) { $event.preventDefault(); alert('Add at least one product.'); }"
+        class="flex max-h-[90vh] flex-col">
         @csrf
 
         <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4">
             <h2 class="font-semibold text-gray-900">Take New Order</h2>
             <button type="button" x-on:click="$dispatch('close-modal', 'new-order')"
-                    class="text-2xl leading-none text-gray-400 hover:text-gray-600" aria-label="Close">&times;</button>
+                class="text-2xl leading-none text-gray-400 hover:text-gray-600" aria-label="Close">&times;</button>
         </div>
 
         <div class="space-y-5 overflow-y-auto px-6 py-5">
@@ -50,17 +50,19 @@
                     <div>
                         <label class="mb-1 block text-xs font-medium text-gray-600">First name</label>
                         <input type="text" name="customer_first_name" value="{{ old('customer_first_name') }}" required maxlength="100"
-                               class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                            class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-medium text-gray-600">Last name</label>
                         <input type="text" name="customer_last_name" value="{{ old('customer_last_name') }}" required maxlength="100"
-                               class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                            class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-medium text-gray-600">Phone number</label>
-                        <input type="text" name="customer_phone" value="{{ old('customer_phone') }}" required maxlength="30"
-                               class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                        <input type="text" name="customer_phone" value="{{ old('customer_phone') }}" required
+                            inputmode="numeric" pattern="[0-9]*" maxlength="11"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                            class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-medium text-gray-600">Order type</label>
@@ -76,21 +78,21 @@
                     <div class="sm:col-span-2" x-show="fulfillmentType === 'delivery'" x-cloak>
                         <label class="mb-1 block text-xs font-medium text-gray-600">Delivery address</label>
                         <input type="text" name="delivery_address" value="{{ old('delivery_address') }}" maxlength="255" :required="fulfillmentType === 'delivery'"
-                               class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                            class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
                     </div>
                     <div x-show="fulfillmentType === 'delivery'" x-cloak>
                         <label class="mb-1 block text-xs font-medium text-gray-600">Scheduled delivery date</label>
                         <input type="date" name="scheduled_delivery_date" value="{{ old('scheduled_delivery_date') }}" min="{{ now()->toDateString() }}" :required="fulfillmentType === 'delivery'"
-                               class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                            class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-medium text-gray-600">Payment method</label>
                         <div class="mt-2 flex gap-4">
                             <label class="flex items-center gap-2 text-sm">
-                                <input type="radio" name="payment_method" value="cash" @checked(old('payment_method', 'cash') === 'cash') class="text-maroon-600 focus:ring-maroon-500"> Cash
+                                <input type="radio" name="payment_method" value="cash" @checked(old('payment_method', 'cash' )==='cash' ) class="text-maroon-600 focus:ring-maroon-500"> Cash
                             </label>
                             <label class="flex items-center gap-2 text-sm">
-                                <input type="radio" name="payment_method" value="gcash" @checked(old('payment_method') === 'gcash') class="text-maroon-600 focus:ring-maroon-500"> GCash
+                                <input type="radio" name="payment_method" value="gcash" @checked(old('payment_method')==='gcash' ) class="text-maroon-600 focus:ring-maroon-500"> GCash
                             </label>
                         </div>
                         <p class="mt-1 text-[11px] text-gray-400">Full payment only — no down payment or partial payment.</p>
@@ -110,7 +112,7 @@
                         <div class="col-span-12 sm:col-span-5">
                             <label class="mb-1 block text-xs font-medium text-gray-600">Product</label>
                             <select :name="`items[${index}][product_id]`" x-model="item.product_id" required
-                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                                class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
                                 <option value="">Select product…</option>
                                 <template x-for="p in products" :key="p.id">
                                     <option :value="p.id" x-text="`${p.name} (${p.cylinder_name || 'size not set'}) — gas ₱${Number(p.gas_price).toLocaleString()} (stock: ${p.current_stock})`"></option>
@@ -120,15 +122,15 @@
                         <div class="col-span-4 sm:col-span-2">
                             <label class="mb-1 block text-xs font-medium text-gray-600">Qty</label>
                             <input type="number" min="1" :name="`items[${index}][quantity]`" x-model.number="item.quantity" required
-                                   class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                                class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
                         </div>
                         <div class="col-span-8 sm:col-span-3">
                             <label class="mb-1 block text-xs font-medium text-gray-600">Cylinder option</label>
                             <select :name="`items[${index}][has_own_cylinder]`" x-model="item.has_own_cylinder"
-                                    class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                                class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
                                 <option :value="true">Gas only (exchange)</option>
                                 <option :value="false"
-                                        x-text="!findProduct(item.product_id) ? 'Select gas first' : findProduct(item.product_id).cylinder_price == null ? 'Cylinder size not configured' : `Buy ${findProduct(item.product_id).cylinder_name} cylinder — ₱${Number(findProduct(item.product_id).cylinder_price).toLocaleString()}`"></option>
+                                    x-text="!findProduct(item.product_id) ? 'Select gas first' : findProduct(item.product_id).cylinder_price == null ? 'Cylinder size not configured' : `Buy ${findProduct(item.product_id).cylinder_name} cylinder — ₱${Number(findProduct(item.product_id).cylinder_price).toLocaleString()}`"></option>
                             </select>
                         </div>
                         <div class="col-span-8 text-sm font-medium text-gray-700 sm:col-span-1" x-text="'₱' + lineTotal(item).toLocaleString()"></div>
@@ -165,7 +167,7 @@
 
         <div class="flex justify-end gap-3 border-t border-gray-100 bg-gray-50 px-6 py-4">
             <button type="button" x-on:click="$dispatch('close-modal', 'new-order')"
-                    class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
+                class="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50">Cancel</button>
             <button type="submit" class="rounded-lg bg-maroon-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-maroon-700">Confirm Order</button>
         </div>
     </form>
@@ -178,7 +180,11 @@
             fulfillmentType: startFulfillment,
             items: startItems,
             addItem() {
-                this.items.push({ product_id: '', quantity: 1, has_own_cylinder: true });
+                this.items.push({
+                    product_id: '',
+                    quantity: 1,
+                    has_own_cylinder: true
+                });
             },
             removeItem(index) {
                 this.items.splice(index, 1);

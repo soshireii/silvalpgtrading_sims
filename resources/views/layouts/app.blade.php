@@ -26,7 +26,7 @@
             class="fixed inset-0 bg-black/40 z-30 lg:hidden"></div>
 
         <aside
-            class="fixed inset-y-0 left-0 z-40 w-64 bg-maroon-700 flex flex-col transform transition-transform duration-200 lg:translate-x-0 lg:static lg:z-auto"
+            class="fixed inset-y-0 left-0 z-40 w-64 bg-maroon-700 flex flex-col transform transition-transform duration-200 lg:translate-x-0 lg:sticky lg:top-0 lg:bottom-auto lg:h-screen lg:self-start lg:shrink-0 lg:z-auto"
             :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
 
             <div class="h-16 flex items-center gap-2 px-5 border-b border-maroon-600/60">

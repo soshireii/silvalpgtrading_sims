@@ -33,7 +33,7 @@ trait ManagesOrders
         return $request->validate([
             'customer_first_name' => 'required|string|max:100',
             'customer_last_name' => 'required|string|max:100',
-            'customer_phone' => 'required|string|max:30',
+            'customer_phone' => ['required', 'regex:/^[0-9]{7,15}$/'],
             'fulfillment_type' => 'required|in:delivery,pickup',
             'delivery_address' => 'nullable|required_if:fulfillment_type,delivery|string|max:255',
             'scheduled_delivery_date' => 'nullable|required_if:fulfillment_type,delivery|date|after_or_equal:today',

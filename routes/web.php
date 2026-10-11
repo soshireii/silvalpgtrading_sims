@@ -76,6 +76,8 @@ Route::middleware(['auth', 'verified', 'role:admin'])->prefix('admin')->name('ad
     Route::post('/expenses', [AdminExpense::class, 'store'])->name('expenses.store');
     Route::post('/expenses/categories', [AdminExpense::class, 'storeCategory'])->name('expenses.categories.store');
     Route::delete('/expenses/{expense}', [AdminExpense::class, 'destroy'])->name('expenses.destroy');
+    Route::put('/expenses/categories/{expenseCategory}', [AdminExpense::class, 'updateCategory'])->name('expenses.categories.update');
+    Route::delete('/expenses/categories/{expenseCategory}', [AdminExpense::class, 'destroyCategory'])->name('expenses.categories.destroy');
 
     Route::get('/reports', [AdminReport::class, 'index'])->name('reports.index');
     Route::get('/reports/export', [AdminReport::class, 'export'])->name('reports.export');
@@ -112,6 +114,9 @@ Route::middleware(['auth', 'verified', 'role:cashier'])->prefix('cashier')->name
     Route::get('/inventory/{product}/logs', [CashierInventory::class, 'logs'])->name('inventory.logs');
     Route::get('/expenses', [CashierExpense::class, 'index'])->name('expenses.index');
     Route::post('/expenses', [CashierExpense::class, 'store'])->name('expenses.store');
+    Route::post('/expenses/categories', [CashierExpense::class, 'storeCategory'])->name('expenses.categories.store');
+    Route::put('/expenses/categories/{expenseCategory}', [CashierExpense::class, 'updateCategory'])->name('expenses.categories.update');
+    Route::delete('/expenses/categories/{expenseCategory}', [CashierExpense::class, 'destroyCategory'])->name('expenses.categories.destroy');
 });
 
 // Stock in / stock out and supplier orders — both owner and cashier handle stock

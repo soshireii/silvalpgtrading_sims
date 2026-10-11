@@ -527,7 +527,43 @@ class ReportService
     {
         return date('M j, Y', strtotime($c['f']['from'])) . ' – ' . date('M j, Y', strtotime($c['f']['to']));
     }
+    /** Weekday names keyed 1 (Monday) to 7 (Sunday), the same numbers date('N') returns. */
+    private function weekdayNames(): array
+    {
+        return [1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday'];
+    }
 
+    /** Orders and sales per weekday: [1 => ['n' => , 'total' => ], ... 7 => ...]  (1 = Monday ... 7 = Sunday). */
+    private function weekdayStats(array $sales): array
+    {
+        $wd = [];
+        for ($i = 1; $i <= 7; $i++) {
+            $wd[$i] = ['n' => 0, 'total' => 0.0];
+        }
+        foreach ($sales as $o) {
+            $w = (int) date('N', strtotime($this->day($o['order_date'])));
+            $wd[$w]['n']++;
+            $wd[$w]['total'] += $this->amt($o);
+        }
+
+        return $wd;
+    }
+
+    /** Weekday number (1-7) with the most orders; a tie goes to the higher sales. Null when there are no orders. */
+    private function busiestWeekday(array $wd): ?int
+    {
+        $best = null;
+        foreach ($wd as $w => $r) {
+            if ($r['n'] === 0) {
+                continue;
+            }
+            if ($best === null || [$r['n'], $r['total']] > [$wd[$best]['n'], $wd[$best]['total']]) {
+                $best = $w;
+            }
+        }
+
+        return $best;
+    }
     /* =====================================================================
      |  1. OVERVIEW
      * ===================================================================*/
@@ -583,14 +619,10 @@ class ReportService
             arsort($methods);
             $insights[] = 'Most used payment method: ' . array_key_first($methods) . ' (' . reset($methods) . ' of ' . $orderCount . ' orders).';
         }
-        $weekday = [];
-        foreach ($c['sales'] as $o) {
-            $w = date('l', strtotime($this->day($o['order_date'])));
-            $weekday[$w] = ($weekday[$w] ?? 0) + 1;
-        }
-        if ($weekday) {
-            arsort($weekday);
-            $insights[] = 'Busiest day of the week: ' . array_key_first($weekday) . ' (' . reset($weekday) . ' orders).';
+        $wd = $this->weekdayStats($c['sales']);
+        $busy = $this->busiestWeekday($wd);
+        if ($busy !== null) {
+            $insights[] = 'Busiest day of the week: ' . $this->weekdayNames()[$busy] . ' (' . $wd[$busy]['n'] . ' orders, ' . $this->money($wd[$busy]['total']) . ').';
         }
         if ($cancelCount) {
             $insights[] = $cancelCount . ' order(s) were cancelled (' . $this->money($cancelValue) . '). Open the "Cancelled orders" tab to see why.';
@@ -1740,27 +1772,49 @@ class ReportService
             $topRows[] = [$r['name'], $r['phone'], $this->num($r['orders']), $this->money($r['total']), $this->money($r['total'] / $r['orders']), date('M j, Y', strtotime($r['last']))];
         }
 
-        // ----- weekday + hour of day -----
-        $weekdays = [1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday'];
-        $wd = array_fill(1, 7, ['n' => 0, 'total' => 0.0]);
+        // ----- weekday (1 = Monday ... 7 = Sunday) -----
+        // Always look weekdays up by their real number (1-7). Never use array_column()/array_search()
+        // on $wd: they renumber the keys 0-6 and the weekday name ends up one day off.
+        $names = $this->weekdayNames();
+        $wd = $this->weekdayStats($sales);
+        $busy = $this->busiestWeekday($wd);                  // most orders
+        $topSalesDay = null;                                  // most money
+        foreach ($wd as $w => $r) {
+            if ($r['n'] > 0 && ($topSalesDay === null || $r['total'] > $wd[$topSalesDay]['total'])) {
+                $topSalesDay = $w;
+            }
+        }
+        $wdRows = [];
+        foreach ($names as $n => $label) {
+            $wdRows[] = [
+                $label,
+                $this->num0($wd[$n]['n']),
+                $this->money0($wd[$n]['total']),
+                $this->pct($wd[$n]['n'], count($sales)),
+                $this->pct($wd[$n]['total'], $total)
+            ];
+        }
+        $wdOrders = array_map(fn($n) => $wd[$n]['n'], array_keys($names));
+        $wdSales = array_map(fn($n) => $wd[$n]['total'], array_keys($names));
+
+        // ----- hour of day (hours 0-23, keys are the hours themselves) -----
         $hours = array_fill(0, 24, 0);
         foreach ($sales as $o) {
-            $w = (int) date('N', strtotime($this->day($o['order_date'])));
-            $wd[$w]['n']++;
-            $wd[$w]['total'] += $this->amt($o);
             if (! empty($o['ordered_at'])) {
                 $hours[(int) date('G', strtotime((string) $o['ordered_at']))]++;
             }
         }
-        $wdRows = [];
-        foreach ($weekdays as $n => $label) {
-            $wdRows[] = [$label, $this->num0($wd[$n]['n']), $this->money0($wd[$n]['total']), $this->pct($wd[$n]['n'], count($sales))];
-        }
         $hourLabels = array_map(fn($h) => date('ga', strtotime(sprintf('%02d:00', $h))), array_keys($hours));
-        $busyHour = array_sum($hours) ? array_search(max($hours), $hours, true) : null;
-        $busyDay = count($sales) ? array_search(max(array_column($wd, 'n')), array_column($wd, 'n'), true) : null;
+        $busyHour = array_sum($hours) > 0 ? array_search(max($hours), $hours, true) : null;
 
         $insights = [];
+        if ($busy !== null) {
+            $insights[] = 'Most orders: ' . $names[$busy] . ' (' . $wd[$busy]['n'] . ' orders, ' . $this->money($wd[$busy]['total']) . ').';
+        }
+        if ($topSalesDay !== null && $topSalesDay !== $busy) {
+            $insights[] = 'Most sales money: ' . $names[$topSalesDay] . ' (' . $this->money($wd[$topSalesDay]['total']) . ' from ' . $wd[$topSalesDay]['n']
+                . ' orders), even though ' . $names[$busy] . ' had the most orders.';
+        }
         if ($repeat) {
             $insights[] = $repeat . ' of ' . $unique . ' customers ordered more than once in this period (' . $this->pct($repeat, $unique) . ').';
         }
@@ -1773,22 +1827,28 @@ class ReportService
         }
 
         return [
-            'description' => 'Who buys the most, how many customers come back, and which days and hours are the busiest.',
+            'description' => 'Who buys the most, how many customers come back, and which days and hours are the busiest. '
+                . 'Hours use the time each order was saved (server timezone: ' . date_default_timezone_get() . ').',
             'kpis' => [
                 $this->kpi('Customers', $this->num($unique), 'matched by phone number'),
                 $this->kpi('Repeat customers', $this->num($repeat), $this->pct($repeat, $unique) . ' ordered 2+ times', 'green'),
                 $this->kpi('Orders per customer', $unique ? number_format(count($sales) / $unique, 1) : '—'),
-                $this->kpi('Busiest weekday', $busyDay ? $weekdays[$busyDay] : '—', $busyDay ? $wd[$busyDay]['n'] . ' orders' : null),
+                $this->kpi(
+                    'Busiest weekday',
+                    $busy !== null ? $names[$busy] : '—',
+                    $busy !== null ? $wd[$busy]['n'] . ' orders · ' . $this->money($wd[$busy]['total']) : null
+                ),
             ],
             'insights' => $insights,
             'charts' => [
-                $this->chart('Orders by weekday', 'bar', array_values($weekdays), [['label' => 'Orders', 'data' => array_column($wd, 'n'), 'tone' => 'maroon']]),
-                $this->chart('Orders by hour of day', 'bar', $hourLabels, [['label' => 'Orders', 'data' => array_values($hours), 'tone' => 'amber']], 'count', ['wide' => true]),
+                $this->chart('Orders by weekday', 'bar', array_values($names), [['label' => 'Orders', 'data' => $wdOrders, 'tone' => 'maroon']]),
+                $this->chart('Sales by weekday', 'bar', array_values($names), [['label' => 'Sales', 'data' => $wdSales, 'tone' => 'green']], 'money'),
                 $this->chart('New vs repeat customers', 'doughnut', ['Ordered once', 'Ordered 2+ times'], [['label' => 'Customers', 'data' => [$unique - $repeat, $repeat]]]),
+                $this->chart('Orders by hour of day', 'bar', $hourLabels, [['label' => 'Orders', 'data' => array_values($hours), 'tone' => 'amber']], 'count', ['wide' => true]),
             ],
             'tables' => [
                 $this->table('Top customers', ['Customer', 'Phone', '>Orders', '>Total spent', '>Avg order', '>Last order'], $topRows, null, 'Top 15 by amount spent in this period.'),
-                $this->table('Orders by weekday', ['Day', '>Orders', '>Sales', '>% of orders'], $wdRows),
+                $this->table('Orders by weekday', ['Day', '>Orders', '>Sales', '>% of orders', '>% of sales'], $wdRows),
             ],
         ];
     }

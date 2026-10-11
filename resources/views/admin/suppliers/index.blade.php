@@ -18,7 +18,9 @@
 
         <div class="flex justify-end mb-4">
             <button type="button" x-on:click="add()" class="inline-flex items-center gap-2 bg-maroon-600 hover:bg-maroon-700 text-white text-sm font-medium px-4 py-2.5 rounded-lg shadow-sm transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
                 Add Supplier
             </button>
         </div>
@@ -43,21 +45,25 @@
                                 @if($supplier->address)<div class="text-xs font-normal text-gray-400">{{ $supplier->address }}</div>@endif
                             </td>
                             <td class="py-3 px-4 text-gray-600">{{ $supplier->contact_name ?? '—' }}</td>
-                            <td class="py-3 px-4 text-gray-500">{{ $supplier->phone ?? '—' }}<div class="text-xs text-gray-400">{{ $supplier->email }}</div></td>
+                            <td class="py-3 px-4 text-gray-500">{{ $supplier->phone ?? '—' }}
+                                <div class="text-xs text-gray-400">{{ $supplier->email }}</div>
+                            </td>
                             <td class="py-3 px-4 text-gray-600">{{ $supplier->purchase_orders_count }}</td>
                             <td class="py-3 px-4"><x-badge :color="$supplier->is_active ? 'green' : 'gray'" :label="$supplier->is_active ? 'Active' : 'Inactive'" /></td>
                             <td class="py-3 px-4 text-right space-x-3">
                                 <button type="button" class="text-maroon-600 text-xs font-medium hover:underline"
-                                        x-on:click="edit({{ \Illuminate\Support\Js::from($supplier->only(['id', 'name', 'contact_first_name', 'contact_last_name', 'phone', 'email', 'address', 'is_active'])) }})">Edit</button>
+                                    x-on:click="edit({{ \Illuminate\Support\Js::from($supplier->only(['id', 'name', 'contact_first_name', 'contact_last_name', 'phone', 'email', 'address', 'is_active'])) }})">Edit</button>
                                 <form method="POST" action="{{ route('admin.suppliers.destroy', $supplier) }}" class="inline"
-                                      onsubmit="return confirm('Delete this supplier?');">
+                                    onsubmit="return confirm('Delete this supplier?');">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="text-status-danger text-xs font-medium hover:underline">Delete</button>
                                 </form>
                             </td>
                         </tr>
                         @empty
-                        <tr><td colspan="6" class="py-8 text-center text-gray-400">No suppliers yet.</td></tr>
+                        <tr>
+                            <td colspan="6" class="py-8 text-center text-gray-400">No suppliers yet.</td>
+                        </tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -95,8 +101,10 @@
                         <input type="text" name="contact_last_name" x-model="form.contact_last_name" maxlength="100" class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
                     </div>
                     <div>
-                        <label class="mb-1 block text-xs font-medium text-gray-600">Phone</label>
-                        <input type="text" name="phone" x-model="form.phone" maxlength="30" class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
+                        <input type="text" name="phone" x-model="form.phone"
+                            inputmode="numeric" pattern="[0-9]*" maxlength="11"
+                            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                            class="w-full rounded-lg border-gray-300 text-sm focus:border-maroon-500 focus:ring-maroon-500">
                     </div>
                     <div>
                         <label class="mb-1 block text-xs font-medium text-gray-600">Email</label>
